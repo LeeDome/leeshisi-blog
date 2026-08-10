@@ -1,0 +1,310 @@
+<% if (locals.page) { %>
+<div class="page-detail">
+  <header class="page-header">
+    <h1 class="page-title"><%= page.title %></h1>
+  </header>
+
+  <div class="page-content">
+    <%- page.content %>
+  </div>
+</div>
+
+<div class="comments-section" id="comments">
+  <% if (locals.comment_submitted) { %>
+  <div class="comment-success">评论提交成功，审核后将会显示</div>
+  <% } %>
+  <div class="comments-header">
+    <h3 class="comments-title">评论 (<%= commentTotal || 0 %>)</h3>
+  </div>
+
+  <div class="comment-form-wrap">
+    <h4 class="comment-form-title">发表评论</h4>
+    <form class="comment-form" action="/comment" method="POST">
+      <input type="hidden" name="page_type" value="<%= page.slug %>">
+      <div class="comment-form-row">
+        <input type="email" name="email" class="comment-input" placeholder="邮箱 *" required>
+        <input type="text" name="nickname" class="comment-input" placeholder="昵称 *" required>
+        <input type="url" name="website" class="comment-input" placeholder="网站（可选）">
+      </div>
+      <textarea name="content" class="comment-textarea" placeholder="写下你的评论..." required></textarea>
+      <button type="submit" class="comment-submit-btn">提交评论</button>
+    </form>
+  </div>
+
+  <% if (locals.comments && comments.length > 0) { %>
+  <ul class="comment-list">
+    <% comments.forEach(function(comment) { %>
+    <li class="comment-item" id="comment-<%= comment.id %>">
+      <div class="comment-avatar">
+        <img src="<%= gravatar(comment.email, 48) %>" alt="<%= comment.nickname %>">
+      </div>
+      <div class="comment-body">
+        <div class="comment-meta">
+          <strong class="comment-nickname">
+            <% if (comment.website) { %>
+            <a href="<%= comment.website %>" target="_blank" rel="noopener nofollow"><%= comment.nickname %></a>
+            <% } else { %>
+            <%= comment.nickname %>
+            <% } %>
+          </strong>
+          <span class="comment-time"><%= comment.created_at %></span>
+        </div>
+        <div class="comment-content"><%= comment.content %></div>
+        <div class="comment-actions">
+          <button class="comment-action-btn comment-like-btn<%= (votedCommentMap[comment.id] === 'like') ? ' active' : '' %>" data-comment-id="<%= comment.id %>" data-action="like">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+            <span><%= comment.like_count || 0 %></span>
+          </button>
+          <button class="comment-action-btn comment-dislike-btn<%= (votedCommentMap[comment.id] === 'dislike') ? ' active' : '' %>" data-comment-id="<%= comment.id %>" data-action="dislike">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+            <span><%= comment.dislike_count || 0 %></span>
+          </button>
+          <button class="comment-action-btn comment-reply-btn" data-comment-id="<%= comment.id %>">回复</button>
+        </div>
+        <div class="comment-reply-form" id="reply-form-<%= comment.id %>" style="display:none;">
+          <form action="/comment" method="POST">
+            <input type="hidden" name="page_type" value="<%= page.slug %>">
+            <input type="hidden" name="parent_id" value="<%= comment.id %>">
+            <div class="comment-form-row">
+              <input type="email" name="email" class="comment-input" placeholder="邮箱 *" required>
+              <input type="text" name="nickname" class="comment-input" placeholder="昵称 *" required>
+              <input type="url" name="website" class="comment-input" placeholder="网站（可选）">
+            </div>
+            <textarea name="content" class="comment-textarea" placeholder="写下你的回复..." required></textarea>
+            <button type="submit" class="comment-submit-btn">提交回复</button>
+          </form>
+        </div>
+
+        <% if (comment.children && comment.children.length > 0) { %>
+        <ul class="comment-children">
+          <% comment.children.forEach(function(child) { %>
+          <li class="comment-item" id="comment-<%= child.id %>">
+            <div class="comment-avatar">
+              <img src="<%= gravatar(child.email, 48) %>" alt="<%= child.nickname %>">
+            </div>
+            <div class="comment-body">
+              <div class="comment-meta">
+                <strong class="comment-nickname">
+                  <% if (child.website) { %>
+                  <a href="<%= child.website %>" target="_blank" rel="noopener nofollow"><%= child.nickname %></a>
+                  <% } else { %>
+                  <%= child.nickname %>
+                  <% } %>
+                </strong>
+                <span class="comment-time"><%= child.created_at %></span>
+              </div>
+              <div class="comment-content"><%= child.content %></div>
+              <div class="comment-actions">
+                <button class="comment-action-btn comment-like-btn" data-comment-id="<%= child.id %>" data-action="like">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                  <span><%= child.like_count || 0 %></span>
+                </button>
+                <button class="comment-action-btn comment-dislike-btn" data-comment-id="<%= child.id %>" data-action="dislike">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                  <span><%= child.dislike_count || 0 %></span>
+                </button>
+                <button class="comment-action-btn comment-reply-btn" data-comment-id="<%= child.id %>">回复</button>
+              </div>
+              <div class="comment-reply-form" id="reply-form-<%= child.id %>" style="display:none;">
+                <form action="/comment" method="POST">
+                  <input type="hidden" name="page_type" value="<%= page.slug %>">
+                  <input type="hidden" name="parent_id" value="<%= child.id %>">
+                  <div class="comment-form-row">
+                    <input type="email" name="email" class="comment-input" placeholder="邮箱 *" required>
+                    <input type="text" name="nickname" class="comment-input" placeholder="昵称 *" required>
+                    <input type="url" name="website" class="comment-input" placeholder="网站（可选）">
+                  </div>
+                  <textarea name="content" class="comment-textarea" placeholder="写下你的回复..." required></textarea>
+                  <button type="submit" class="comment-submit-btn">提交回复</button>
+                </form>
+              </div>
+            </div>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </div>
+    </li>
+    <% }); %>
+  </ul>
+
+  <% if (locals.commentTotalPages && commentTotalPages > 1) { %>
+  <nav class="pagination">
+    <% if (commentPage > 1) { %>
+      <a href="?commentPage=<%= commentPage - 1 %>#comments" class="pagination-link pagination-prev">&laquo; 上一页</a>
+    <% } else { %>
+      <span class="pagination-link pagination-prev disabled">&laquo; 上一页</span>
+    <% } %>
+
+    <div class="pagination-numbers">
+      <% for (var i = 1; i <= commentTotalPages; i++) { %>
+        <% if (i === commentPage) { %>
+          <span class="pagination-link pagination-current"><%= i %></span>
+        <% } else if (i === 1 || i === commentTotalPages || (i >= commentPage - 2 && i <= commentPage + 2)) { %>
+          <a href="?commentPage=<%= i %>#comments" class="pagination-link"><%= i %></a>
+        <% } else if (i === commentPage - 3 || i === commentPage + 3) { %>
+          <span class="pagination-ellipsis">...</span>
+        <% } %>
+      <% } %>
+    </div>
+
+    <% if (commentPage < commentTotalPages) { %>
+      <a href="?commentPage=<%= commentPage + 1 %>#comments" class="pagination-link pagination-next">下一页 &raquo;</a>
+    <% } else { %>
+      <span class="pagination-link pagination-next disabled">下一页 &raquo;</span>
+    <% } %>
+  </nav>
+  <% } %>
+
+  <% } else { %>
+  <div class="empty-state">
+    <p>暂无评论，快来抢沙发吧！</p>
+  </div>
+  <% } %>
+</div>
+
+<script>
+(function() {
+  // ========== 评论投票状态本地缓存 ==========
+  // 从服务端注入已投票的评论 ID 和对应类型
+  var votedComments = <%- typeof votedCommentMap !== 'undefined' ? JSON.stringify(votedCommentMap) : '{}'%>;
+  function getVoteKey(commentId, type) {
+    return 'cv_' + commentId + '_' + type;
+  }
+  function setVote(commentId, type) {
+    localStorage.setItem(getVoteKey(commentId, type), '1');
+  }
+  function clearVote(commentId, type) {
+    localStorage.removeItem(getVoteKey(commentId, type));
+  }
+  function hasVote(commentId, type) {
+    return localStorage.getItem(getVoteKey(commentId, type)) === '1' || votedComments[commentId] === type;
+  }
+
+  // 初始化按钮 active 状态（服务端投票状态）
+  document.querySelectorAll('.comment-like-btn').forEach(function(btn) {
+    var id = btn.dataset.commentId;
+    if (votedComments[id] === 'like') btn.classList.add('active');
+  });
+  document.querySelectorAll('.comment-dislike-btn').forEach(function(btn) {
+    var id = btn.dataset.commentId;
+    if (votedComments[id] === 'dislike') btn.classList.add('active');
+  });
+
+  var replyBtns = document.querySelectorAll('.comment-reply-btn');
+  replyBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var commentId = this.dataset.commentId;
+      var form = document.getElementById('reply-form-' + commentId);
+      if (form) {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      }
+    });
+  });
+
+  var likeBtns = document.querySelectorAll('.comment-like-btn');
+  likeBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var commentId = this.dataset.commentId;
+      if (hasVote(commentId, 'like')) return;
+      // 如果已经点过踩，不允许再点赞
+      if (hasVote(commentId, 'dislike')) {
+        alert('已点踩，不能再点赞');
+        return;
+      }
+      setVote(commentId, 'like');
+      btn.classList.add('active');
+      var dislikeBtn = btn.parentElement.querySelector('.comment-dislike-btn');
+      if (dislikeBtn) dislikeBtn.classList.remove('active');
+      fetch('/comment/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'comment_id=' + commentId
+      }).then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            var countSpan = btn.querySelector('span');
+            countSpan.textContent = data.like_count;
+          } else {
+            clearVote(commentId, 'like');
+            btn.classList.remove('active');
+            if (data.message) alert(data.message);
+          }
+        })
+        .catch(function() {
+          clearVote(commentId, 'like');
+          btn.classList.remove('active');
+        });
+    });
+  });
+
+  var dislikeBtns = document.querySelectorAll('.comment-dislike-btn');
+  dislikeBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var commentId = this.dataset.commentId;
+      if (hasVote(commentId, 'dislike')) return;
+      // 如果已经点过赞，不允许再点踩
+      if (hasVote(commentId, 'like')) {
+        alert('已点赞，不能再点踩');
+        return;
+      }
+      setVote(commentId, 'dislike');
+      btn.classList.add('active');
+      var likeBtn = btn.parentElement.querySelector('.comment-like-btn');
+      if (likeBtn) likeBtn.classList.remove('active');
+      fetch('/comment/dislike', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'comment_id=' + commentId
+      }).then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.success) {
+            var countSpan = btn.querySelector('span');
+            countSpan.textContent = data.dislike_count;
+          } else {
+            clearVote(commentId, 'dislike');
+            btn.classList.remove('active');
+            if (data.message) alert(data.message);
+          }
+        })
+        .catch(function() {
+          clearVote(commentId, 'dislike');
+          btn.classList.remove('active');
+        });
+    });
+  });
+
+  // ========== QQ 邮箱自动填充昵称 ==========
+  document.querySelectorAll('.comment-form input[name="email"]').forEach(function(emailInput) {
+    emailInput.addEventListener('input', function() {
+      var form = this.closest('form');
+      var nicknameInput = form.querySelector('input[name="nickname"]');
+      if (!nicknameInput || nicknameInput.value.trim() !== '') return;
+
+      var match = this.value.trim().match(/^(\d+)@qq\.com$/);
+      if (!match) return;
+
+      var qq = match[1];
+      console.log('检测到QQ邮箱，QQ号:', qq);
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/api/qq-info?qq=' + qq, true);
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          var data = JSON.parse(xhr.responseText);
+          console.log('QQ信息响应:', data);
+          if (data.success) {
+            nicknameInput.value = data.nickname;
+          }
+        }
+      };
+      xhr.send();
+    });
+  });
+})();
+</script>
+
+<% } else { %>
+<div class="empty-state">
+  <p>页面不存在</p>
+</div>
+<% } %>

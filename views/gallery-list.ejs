@@ -1,0 +1,65 @@
+<div class="gallery-list-page">
+  <div class="page-header">
+    <h1 class="page-title">图册</h1>
+    <% if (locals.total) { %>
+    <p class="page-subtitle">共 <%= total %> 个图册</p>
+    <% } %>
+  </div>
+
+  <% if (locals.galleries && galleries.length > 0) { %>
+  <div class="gallery-grid">
+    <% galleries.forEach(function(gallery) { %>
+    <a href="/gallery/<%= gallery.id %>" class="gallery-card">
+      <div class="gallery-card-cover">
+        <% if (gallery.cover_image) { %>
+        <img src="<%= gallery.cover_image %>" alt="<%= gallery.title %>" loading="lazy">
+        <% } else { %>
+        <div class="gallery-card-placeholder">
+          <svg viewBox="0 0 24 24" width="48" height="48"><path fill="#ccc" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+        </div>
+        <% } %>
+      </div>
+      <div class="gallery-card-info">
+        <h3 class="gallery-card-title"><%= gallery.title %></h3>
+        <% if (gallery.description) { %>
+        <p class="gallery-card-desc"><%= gallery.description.length > 80 ? gallery.description.substring(0, 80) + '...' : gallery.description %></p>
+        <% } %>
+      </div>
+    </a>
+    <% }); %>
+  </div>
+
+  <% if (locals.totalPages && totalPages > 1) { %>
+  <nav class="pagination">
+    <% if (page > 1) { %>
+      <a href="?page=<%= page - 1 %>" class="pagination-link pagination-prev">&laquo; 上一页</a>
+    <% } else { %>
+      <span class="pagination-link pagination-prev disabled">&laquo; 上一页</span>
+    <% } %>
+
+    <div class="pagination-numbers">
+      <% for (var i = 1; i <= totalPages; i++) { %>
+        <% if (i === page) { %>
+          <span class="pagination-link pagination-current"><%= i %></span>
+        <% } else if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) { %>
+          <a href="?page=<%= i %>" class="pagination-link"><%= i %></a>
+        <% } else if (i === page - 3 || i === page + 3) { %>
+          <span class="pagination-ellipsis">...</span>
+        <% } %>
+      <% } %>
+    </div>
+
+    <% if (page < totalPages) { %>
+      <a href="?page=<%= page + 1 %>" class="pagination-link pagination-next">下一页 &raquo;</a>
+    <% } else { %>
+      <span class="pagination-link pagination-next disabled">下一页 &raquo;</span>
+    <% } %>
+  </nav>
+  <% } %>
+
+  <% } else { %>
+  <div class="empty-state">
+    <p>暂无图册</p>
+  </div>
+  <% } %>
+</div>

@@ -1,0 +1,29 @@
+<div class="archive-page">
+  <div class="page-header">
+    <h1 class="page-title">归档：<%= archive %></h1>
+    <p class="page-subtitle">共 <%= articles.length %> 篇文章</p>
+  </div>
+
+  <% if (locals.articles && articles.length > 0) { %>
+  <div class="timeline">
+    <% articles.forEach(function(article) { %>
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-date">
+        <%= (new Date(article.created_at).getMonth() + 1) %>月<%= new Date(article.created_at).getDate() %>日
+      </div>
+      <div class="timeline-content">
+        <% if (article.category_name) { %>
+        <span class="timeline-category"><%= article.category_name %></span>
+        <% } %>
+        <a href="/article/<%= article.id %>" class="timeline-title"><%= article.title %></a>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+  <% } else { %>
+  <div class="empty-state">
+    <p>暂无文章</p>
+  </div>
+  <% } %>
+</div>

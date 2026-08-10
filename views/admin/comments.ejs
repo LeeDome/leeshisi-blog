@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>评论管理 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments" class="active">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2>评论管理</h2>
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>昵称</th>
+            <th>邮箱</th>
+            <th>内容</th>
+            <th>文章</th>
+            <th>状态</th>
+            <th>时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof comments !== 'undefined' && comments.length > 0) { %>
+            <% comments.forEach(function(comment) { %>
+            <tr>
+              <td><strong><%= comment.nickname %></strong></td>
+              <td><%= comment.email || '-' %></td>
+              <td><span class="content-excerpt" title="<%= comment.content %>"><%= comment.content %></span></td>
+              <td><%= comment.article ? comment.article.title : '-' %></td>
+              <td>
+                <% if (comment.status === 'approved') { %>
+                  <span class="badge badge-approved">已通过</span>
+                <% } else if (comment.status === 'pending') { %>
+                  <span class="badge badge-pending">待审核</span>
+                <% } else if (comment.status === 'spam') { %>
+                  <span class="badge badge-spam">垃圾</span>
+                <% } else { %>
+                  <span class="badge badge-pending"><%= comment.status %></span>
+                <% } %>
+              </td>
+              <td><%= new Date(comment.created_at).toLocaleDateString('zh-CN') %></td>
+              <td class="actions">
+                <% if (comment.status !== 'approved') { %>
+                  <form method="POST" action="/admin/comments/<%= comment.id %>/approve" style="display:inline">
+                    <button type="submit" class="btn btn-success">通过</button>
+                  </form>
+                <% } %>
+                <% if (comment.status !== 'spam') { %>
+                  <form method="POST" action="/admin/comments/<%= comment.id %>/spam" style="display:inline">
+                    <button type="submit" class="btn btn-warning">垃圾</button>
+                  </form>
+                <% } %>
+                <form method="POST" action="/admin/comments/<%= comment.id %>/delete" style="display:inline" onsubmit="return confirm('确定要删除这条评论吗？')">
+                  <button type="submit" class="btn btn-danger">删除</button>
+                </form>
+              </td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="7" class="text-muted" style="text-align:center;">暂无评论</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+
+      <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+      <div class="pagination">
+        <% if (page > 1) { %>
+          <a href="?page=<%= page - 1 %>">上一页</a>
+        <% } else { %>
+          <span class="disabled">上一页</span>
+        <% } %>
+        <span class="current"><%= page %> / <%= totalPages %></span>
+        <% if (page < totalPages) { %>
+          <a href="?page=<%= page + 1 %>">下一页</a>
+        <% } else { %>
+          <span class="disabled">下一页</span>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>

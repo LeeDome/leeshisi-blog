@@ -1,0 +1,73 @@
+<aside class="sidebar">
+  <div class="sidebar-card author-card">
+    <img class="author-avatar" src="<%= authorAvatar || '/images/default-avatar.svg' %>" alt="头像">
+    <h3 class="author-name"><%= author && author.nickname ? author.nickname : '博主' %></h3>
+    <% if (author && author.bio) { %>
+      <p class="author-bio"><%= author.bio %></p>
+    <% } %>
+  </div>
+
+  <% if (locals.recentComments && recentComments.length > 0) { %>
+  <div class="sidebar-card">
+    <h4 class="sidebar-title">最近评论</h4>
+    <ul class="recent-comments">
+      <% recentComments.forEach(function(comment) { %>
+      <li class="comment-item">
+        <p class="comment-meta">
+          <strong><%= comment.nickname %></strong>
+          <% if (comment.articleTitle) { %>
+            <span class="comment-article">评论了 <a href="/article/<%= comment.article_id %>"><%= comment.articleTitle %></a></span>
+          <% } %>
+          <span class="comment-time"><%= comment.created_at %></span>
+        </p>
+        <p class="comment-snippet"><%= comment.content && comment.content.length > 60 ? comment.content.substring(0, 60) + '...' : comment.content %></p>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (locals.hotArticles && hotArticles.length > 0) { %>
+  <div class="sidebar-card">
+    <h4 class="sidebar-title">热门主题</h4>
+    <ul class="hot-articles">
+      <% hotArticles.forEach(function(article) { %>
+      <li class="hot-item">
+        <a href="/article/<%= article.id %>"><%= article.title %></a>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (locals.archives && archives.length > 0) { %>
+  <div class="sidebar-card">
+    <h4 class="sidebar-title">归档</h4>
+    <ul class="archives">
+      <% archives.forEach(function(archive) { %>
+      <li class="archive-item">
+        <a href="/archive/<%= archive.yearMonth %>"><%= archive.year %>年<%= archive.month %>月 (<%= archive.count %>)</a>
+      </li>
+      <% }); %>
+    </ul>
+  </div>
+  <% } %>
+
+  <% if (locals.tagCloud && tagCloud.length > 0) { %>
+  <div class="sidebar-card">
+    <h4 class="sidebar-title">标签云</h4>
+    <div class="tag-cloud">
+      <% var maxCount = Math.max.apply(null, tagCloud.map(function(t) { return t.count; })); %>
+      <% tagCloud.forEach(function(tag) { %>
+        <% var fontSize = 12 + Math.round((tag.count / maxCount) * 16); %>
+        <a href="/tag/<%= tag.id %>" class="tag-item" style="font-size: <%= fontSize %>px;"><%= tag.name %></a>
+      <% }); %>
+    </div>
+  </div>
+  <% } %>
+
+  <div class="sidebar-card">
+    <h4 class="sidebar-title">站点运行时间</h4>
+    <p class="site-runtime" id="siteRuntime" data-start="<%= locals.siteStartTime || '' %>">计算中...</p>
+  </div>
+</aside>

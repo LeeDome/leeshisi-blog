@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图册管理 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries" class="active">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2>图册管理</h2>
+
+    <div class="panel">
+      <h3>添加图册</h3>
+      <form method="POST" action="/admin/galleries">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="title">标题</label>
+            <input type="text" id="title" name="title" required placeholder="图册标题">
+          </div>
+          <div class="form-group">
+            <label>封面图片</label>
+            <div class="upload-group">
+              <input type="text" id="cover_image" name="cover_image" placeholder="封面图片地址">
+              <button type="button" class="btn btn-upload-image" data-target="cover_image">上传图片</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="description">描述</label>
+          <textarea id="description" name="description" placeholder="图册描述"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">添加图册</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>图片数量</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof galleries !== 'undefined' && galleries.length > 0) { %>
+            <% galleries.forEach(function(gallery) { %>
+            <tr>
+              <td><strong><%= gallery.title %></strong></td>
+              <td><%= gallery.image_count || 0 %></td>
+              <td><%= new Date(gallery.created_at).toLocaleDateString('zh-CN') %></td>
+              <td class="actions">
+                <a href="/admin/galleries/<%= gallery.id %>/edit" class="btn btn-primary btn-sm">编辑</a>
+                <form method="POST" action="/admin/galleries/<%= gallery.id %>/delete" style="display:inline" onsubmit="return confirm('确定要删除这个图册吗？')">
+                  <button type="submit" class="btn btn-danger btn-sm">删除</button>
+                </form>
+              </td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="4" class="text-muted" style="text-align:center;">暂无图册</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+
+      <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+      <div class="pagination">
+        <% if (page > 1) { %>
+          <a href="?page=<%= page - 1 %>">上一页</a>
+        <% } else { %>
+          <span class="disabled">上一页</span>
+        <% } %>
+        <span class="current"><%= page %> / <%= totalPages %></span>
+        <% if (page < totalPages) { %>
+          <a href="?page=<%= page + 1 %>">下一页</a>
+        <% } else { %>
+          <span class="disabled">下一页</span>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+  </main>
+  <script>
+  (function() {
+    function triggerUpload(targetId) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        uploadImage(file, targetId);
+      };
+      input.click();
+    }
+
+    function uploadImage(file, targetId) {
+      var btn = document.querySelector('[data-target="' + targetId + '"]');
+      var originalText = btn.textContent;
+      btn.textContent = '上传中...';
+      btn.disabled = true;
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      fetch('/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          document.getElementById(targetId).value = data.url;
+        } else {
+          alert('上传失败: ' + data.message);
+        }
+      })
+      .catch(function(err) {
+        alert('上传失败: ' + (err.message || '网络错误'));
+      })
+      .finally(function() {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    document.querySelectorAll('.btn-upload-image').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        triggerUpload(this.dataset.target);
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "leeshisi-blog",
+  "version": "1.0.0",
+  "description": "李拾肆个人技术博客系统",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "keywords": [
+    "blog",
+    "express",
+    "ejs",
+    "sqlite"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-sqlite3": "^0.9.16",
+    "ejs": "^6.0.1",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.19.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^4.3.0",
+    "multer": "^2.1.1",
+    "qiniu": "^7.15.2",
+    "sql.js": "^1.14.1"
+  }
+}

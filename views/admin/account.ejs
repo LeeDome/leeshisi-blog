@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号设置 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account" class="active">账号设置</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2>账号设置</h2>
+
+    <div class="panel">
+      <form method="POST" action="/admin/account">
+        <h3 style="font-size:14px;color:#888;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;">账号信息</h3>
+        <div class="form-group">
+          <label for="email">登录邮箱</label>
+          <input type="email" id="email" name="email" value="<%= user && user.email %>" required>
+          <span class="help-text">用于登录，请妥善保管</span>
+        </div>
+        <div class="form-group">
+          <label for="nickname">昵称</label>
+          <input type="text" id="nickname" name="nickname" value="<%= user && user.nickname %>" maxlength="50">
+        </div>
+
+        <hr class="section-divider">
+        <h3 style="font-size:14px;color:#888;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;">修改密码</h3>
+        <div class="form-group">
+          <label for="current_password">当前密码</label>
+          <input type="password" id="current_password" name="current_password" placeholder="请输入当前密码">
+        </div>
+        <div class="form-group">
+          <label for="new_password">新密码</label>
+          <input type="password" id="new_password" name="new_password" placeholder="至少6位" minlength="6">
+          <span class="help-text">留空则不修改密码</span>
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">确认新密码</label>
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="再次输入新密码">
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary">保存并重新登录</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

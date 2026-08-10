@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据库管理 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database" class="active">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2>数据库管理</h2>
+
+    <div class="panel">
+      <h3>备份数据库</h3>
+      <p style="color:#666;margin-bottom:16px;">下载当前数据库文件，用于手动备份或迁移。</p>
+      <a href="/admin/database/backup" class="btn btn-primary">下载备份</a>
+    </div>
+
+    <div class="panel">
+      <h3>导入数据库</h3>
+      <p style="color:#666;margin-bottom:16px;">从备份文件恢复数据库。<strong style="color:#ff4d4f;">将覆盖当前所有数据！</strong></p>
+      <a href="/admin/database/import" class="btn btn-warning">导入数据库</a>
+    </div>
+  </main>
+</body>
+</html>

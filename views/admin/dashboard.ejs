@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仪表盘 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin" class="active">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <h2>仪表盘</h2>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">文章总数</div>
+        <div class="stat-value"><%= typeof articleCount !== 'undefined' ? articleCount : 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">评论总数</div>
+        <div class="stat-value"><%= typeof commentCount !== 'undefined' ? commentCount : 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">图册总数</div>
+        <div class="stat-value"><%= typeof galleryCount !== 'undefined' ? galleryCount : 0 %></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">页面总数</div>
+        <div class="stat-value"><%= typeof pageCount !== 'undefined' ? pageCount : 0 %></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>最近文章</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>标题</th>
+            <th>分类</th>
+            <th>状态</th>
+            <th>创建时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof recentArticles !== 'undefined' && recentArticles.length > 0) { %>
+            <% recentArticles.slice(0, 5).forEach(function(article) { %>
+            <tr>
+              <td><a href="/article/<%= article.id %>"><%= article.title %></a></td>
+              <td><%= article.category ? article.category.name : '-' %></td>
+              <td><span class="badge <%= article.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= article.status === 'published' ? '已发布' : '草稿' %></span></td>
+              <td><%= new Date(article.created_at).toLocaleDateString('zh-CN') %></td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="4" class="text-muted" style="text-align:center;">暂无文章</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h3>最近评论</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>昵称</th>
+            <th>内容摘要</th>
+            <th>文章标题</th>
+            <th>时间</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof recentComments !== 'undefined' && recentComments.length > 0) { %>
+            <% recentComments.slice(0, 5).forEach(function(comment) { %>
+            <tr>
+              <td><%= comment.nickname %></td>
+              <td><%= comment.content ? comment.content.substring(0, 50) + (comment.content.length > 50 ? '...' : '') : '' %></td>
+              <td><%= comment.article ? '<a href="/article/' + comment.article_id + '">' + comment.article.title + '</a>' : '-' %></td>
+              <td><%= new Date(comment.created_at).toLocaleDateString('zh-CN') %></td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="4" class="text-muted" style="text-align:center;">暂无评论</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

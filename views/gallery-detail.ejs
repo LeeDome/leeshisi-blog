@@ -1,0 +1,36 @@
+<% if (locals.gallery) { %>
+<div class="gallery-detail">
+  <header class="gallery-header">
+    <h1 class="gallery-title"><%= gallery.title %></h1>
+    <% if (gallery.description) { %>
+    <p class="gallery-desc"><%= gallery.description %></p>
+    <% } %>
+    <a href="/gallery" class="gallery-back-link">&laquo; 返回图册列表</a>
+    <a href="javascript:history.back()" class="gallery-back-link" style="margin-left:16px;">&laquo; 返回上一页</a>
+  </header>
+
+  <% if (gallery.images && gallery.images.length > 0) { %>
+  <div class="gallery-image-grid">
+    <% gallery.images.forEach(function(image) { %>
+    <figure class="gallery-image-item">
+      <a href="<%= image.image_url %>" class="gallery-image-link" target="_blank">
+        <img src="<%= image.image_url %>" alt="<%= image.caption || '' %>" loading="lazy">
+      </a>
+      <% if (image.caption) { %>
+      <figcaption class="gallery-image-caption"><%= image.caption %></figcaption>
+      <% } %>
+    </figure>
+    <% }); %>
+  </div>
+  <% } else { %>
+  <div class="empty-state">
+    <p>该图册暂无图片</p>
+  </div>
+  <% } %>
+</div>
+
+<% } else { %>
+<div class="empty-state">
+  <p>图册不存在或已被删除</p>
+</div>
+<% } %>

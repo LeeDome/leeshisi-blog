@@ -1,0 +1,4 @@
+node_modules/
+data/blog.db
+public/uploads/
+*.txt

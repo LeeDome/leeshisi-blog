@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= article ? '编辑文章' : '新建文章' %> - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+  <style>
+    .md-editor-wrap { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .md-editor-toolbar {
+      display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 8px;
+      background: #f8f9fa; border-bottom: 1px solid #ddd;
+    }
+    .md-editor-toolbar button {
+      background: #fff; border: 1px solid #ccc; border-radius: 3px;
+      padding: 4px 10px; cursor: pointer; font-size: 13px; color: #333;
+      transition: background 0.15s;
+    }
+    .md-editor-toolbar button:hover { background: #e9ecef; }
+    .md-editor-toolbar .sep { width: 1px; background: #ddd; margin: 0 4px; }
+    .md-editor-body { display: flex; min-height: 500px; }
+    .md-editor-body textarea {
+      flex: 1; border: none; resize: none; padding: 16px;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      font-size: 14px; line-height: 1.6; outline: none; tab-size: 2;
+    }
+    .md-preview {
+      flex: 1; padding: 16px 20px; overflow-y: auto;
+      border-left: 1px solid #ddd; background: #fff;
+      line-height: 1.8; font-size: 15px;
+    }
+    .md-preview h1,.md-preview h2,.md-preview h3,.md-preview h4,.md-preview h5,.md-preview h6 { margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 600; }
+    .md-preview h2 { border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .md-preview p { margin-bottom: 0.8em; }
+    .md-preview a { color: #0366d6; text-decoration: underline; }
+    .md-preview img { max-width: 100%; border-radius: 4px; }
+    .md-preview pre {
+      background: #1c1e22; padding: 14px 18px; border-radius: 6px;
+      overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0;
+      border: 1px solid #2a2c32; position: relative;
+    }
+    .md-preview code {
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace; font-size: 0.9em;
+    }
+    .md-preview :not(pre) > code {
+      background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #d63384;
+    }
+    .md-preview blockquote {
+      border-left: 3px solid #0366d6; padding: 8px 16px; color: #666;
+      background: #f6f8fa; border-radius: 0 4px 4px 0; margin: 12px 0;
+    }
+    .md-preview ul, .md-preview ol { padding-left: 24px; margin: 8px 0; }
+    .md-preview table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+    .md-preview th, .md-preview td { border: 1px solid #ddd; padding: 6px 12px; text-align: left; }
+    .md-preview th { background: #f6f8fa; font-weight: 600; }
+    .md-preview hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles" class="active">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2><%= article && article.id ? '编辑文章' : '新建文章' %></h2>
+
+    <div class="panel">
+      <% if (locals.error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+      <form method="POST" action="<%= article && article.id ? '/admin/articles/' + article.id : '/admin/articles' %>" id="articleForm">
+        <div class="form-group">
+          <label for="title">标题</label>
+          <input type="text" id="title" name="title" value="<%= article ? article.title || '' : '' %>" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="slug">Slug</label>
+            <input type="text" id="slug" name="slug" value="<%= article ? article.slug || '' : '' %>">
+            <span class="help-text">留空则自动从标题生成</span>
+          </div>
+          <div class="form-group">
+            <label for="category_id">分类</label>
+            <select id="category_id" name="category_id">
+              <option value="">-- 请选择 --</option>
+              <% if (typeof categories !== 'undefined' && categories.length > 0) { %>
+                <% categories.forEach(function(cat) { %>
+                  <option value="<%= cat.id %>" <%= article && article.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="excerpt">摘要</label>
+          <textarea id="excerpt" name="excerpt" rows="3"><%= article ? article.excerpt || '' : '' %></textarea>
+        </div>
+        <div class="form-group">
+          <label>封面图片</label>
+          <div class="upload-group">
+            <input type="text" id="cover_image" name="cover_image" value="<%= article ? article.cover_image || '' : '' %>" placeholder="封面图片 URL">
+            <button type="button" class="btn btn-upload-image" data-target="cover_image">上传图片</button>
+          </div>
+          <% if (article && article.cover_image) { %>
+            <div class="upload-preview" id="coverPreview"><img src="<%= article.cover_image %>" alt="封面预览" style="max-height:80px;"></div>
+          <% } else { %>
+            <div class="upload-preview" id="coverPreview"></div>
+          <% } %>
+        </div>
+        <div class="form-group">
+          <label>内容 (Markdown)</label>
+          <div class="md-editor-wrap">
+            <div class="md-editor-toolbar">
+              <button type="button" data-action="h2" title="二级标题">H2</button>
+              <button type="button" data-action="h3" title="三级标题">H3</button>
+              <div class="sep"></div>
+              <button type="button" data-action="bold" title="加粗"><b>B</b></button>
+              <button type="button" data-action="italic" title="斜体"><i>I</i></button>
+              <button type="button" data-action="strike" title="删除线"><s>S</s></button>
+              <div class="sep"></div>
+              <button type="button" data-action="code" title="行内代码">&lt;code&gt;</button>
+              <button type="button" data-action="codeblock" title="代码块">{ }</button>
+              <div class="sep"></div>
+              <button type="button" data-action="link" title="链接">Link</button>
+              <button type="button" data-action="image" title="图片">Img</button>
+              <button type="button" data-action="quote" title="引用">&gt;</button>
+              <div class="sep"></div>
+              <button type="button" data-action="ul" title="无序列表">UL</button>
+              <button type="button" data-action="ol" title="有序列表">OL</button>
+              <button type="button" data-action="table" title="表格">Table</button>
+              <button type="button" data-action="hr" title="分隔线">HR</button>
+            </div>
+            <div class="md-editor-body">
+              <textarea id="content" name="content" required><%= article ? article.content || '' : '' %></textarea>
+              <div class="md-preview" id="mdPreview"></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>标签</label>
+          <div class="tag-checkboxes">
+            <% if (typeof tags !== 'undefined' && tags.length > 0) { %>
+              <% tags.forEach(function(tag) { %>
+                <label>
+                  <input type="checkbox" name="tag_ids" value="<%= tag.id %>" <%= selectedTags && selectedTags.indexOf(tag.id) !== -1 ? 'checked' : '' %>>
+                  <%= tag.name %>
+                </label>
+              <% }); %>
+            <% } else { %>
+              <span class="help-text">暂无标签</span>
+            <% } %>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>状态</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="status" value="published" <%= article && article.status === 'published' ? 'checked' : (!article ? 'checked' : '') %>>
+              发布
+            </label>
+            <label>
+              <input type="radio" name="status" value="draft" <%= article && article.status === 'draft' ? 'checked' : '' %>>
+              草稿
+            </label>
+          </div>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">保存</button>
+          <a href="/admin/articles" class="btn btn-cancel">取消</a>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>
+  (function() {
+    var textarea = document.getElementById('content');
+    var preview = document.getElementById('mdPreview');
+
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try { return hljs.highlight(code, { language: lang }).value; } catch(_) {}
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      gfm: true,
+      breaks: true
+    });
+
+    function updatePreview() {
+      preview.innerHTML = marked.parse(textarea.value);
+    }
+
+    textarea.addEventListener('input', updatePreview);
+    updatePreview();
+
+    // Tab 键支持
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        var start = this.selectionStart;
+        var end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+        updatePreview();
+      }
+    });
+
+    // 工具栏操作
+    document.querySelectorAll('.md-editor-toolbar button[data-action]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var action = this.dataset.action;
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var sel = textarea.value.substring(start, end);
+        var before = '', after = '', newCursorPos = start;
+
+        switch(action) {
+          case 'h2': before = '## '; after = ''; break;
+          case 'h3': before = '### '; after = ''; break;
+          case 'bold': before = '**'; after = '**'; break;
+          case 'italic': before = '*'; after = '*'; break;
+          case 'strike': before = '~~'; after = '~~'; break;
+          case 'code': before = '`'; after = '`'; break;
+          case 'codeblock': before = '```js\n'; after = '\n```'; break;
+          case 'link': before = '['; after = '](url)'; break;
+          case 'image': before = '!['; after = '](url)'; break;
+          case 'quote': before = '> '; after = ''; break;
+          case 'ul': before = '- '; after = ''; break;
+          case 'ol': before = '1. '; after = ''; break;
+          case 'table': before = '| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| '; after = ' | | |'; break;
+          case 'hr': before = '\n---\n'; after = ''; break;
+        }
+
+        var replacement = before + sel + after;
+        textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + before.length + sel.length;
+        textarea.focus();
+        updatePreview();
+      });
+    });
+  })();
+  </script>
+  <script>
+  (function() {
+    function triggerUpload(targetId) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        uploadImage(file, targetId);
+      };
+      input.click();
+    }
+
+    function uploadImage(file, targetId) {
+      var btn = document.querySelector('[data-target="' + targetId + '"]');
+      var originalText = btn.textContent;
+      btn.textContent = '上传中...';
+      btn.disabled = true;
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      fetch('/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          var targetInput = document.getElementById(targetId);
+          targetInput.value = data.url;
+          if (targetId === 'cover_image') {
+            var preview = document.getElementById('coverPreview');
+            preview.innerHTML = '<img src="' + data.url + '" alt="封面预览" style="max-height:80px;">';
+          }
+        } else {
+          alert('上传失败: ' + data.message);
+        }
+      })
+      .catch(function(err) {
+        alert('上传失败: ' + (err.message || '网络错误'));
+      })
+      .finally(function() {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    document.querySelectorAll('.btn-upload-image').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        triggerUpload(this.dataset.target);
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

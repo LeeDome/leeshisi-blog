@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>站点设置 - 管理后台</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="admin-sidebar">
+    <div class="logo">博客后台</div>
+    <nav>
+      <a href="/admin">仪表盘</a>
+      <a href="/admin/articles">文章管理</a>
+      <a href="/admin/categories">分类管理</a>
+      <a href="/admin/tags">标签管理</a>
+      <a href="/admin/galleries">图册管理</a>
+      <a href="/admin/comments">评论管理</a>
+      <a href="/admin/pages">页面管理</a>
+      <a href="/admin/settings" class="active">站点设置</a>
+      <a href="/admin/account">账号设置</a>
+      <a href="/admin/database">数据库管理</a>
+      <a href="/admin/logout" class="logout-link">退出</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <% if (locals.messages && messages.length > 0) { %>
+      <% messages.forEach(function(msg) { %>
+        <div class="alert <%= msg.type === 'success' ? 'alert-success' : 'alert-error' %>"><%= msg.text %></div>
+      <% }); %>
+    <% } %>
+
+    <h2>站点设置</h2>
+
+    <div class="panel">
+      <form method="POST" action="/admin/settings" id="settingsForm">
+        <div class="form-group">
+          <label for="site_name">站点名称</label>
+          <input type="text" id="site_name" name="site_name" value="<%= settings && settings.site_name ? settings.site_name : '' %>" required>
+        </div>
+        <div class="form-group">
+          <label>站点 Logo</label>
+          <div class="upload-group">
+            <input type="text" id="site_logo" name="site_logo" value="<%= settings && settings.site_logo ? settings.site_logo : '' %>" placeholder="Logo 图片 URL">
+            <button type="button" class="btn btn-upload" data-target="site_logo">上传图片</button>
+          </div>
+          <% if (settings && settings.site_logo) { %>
+            <div class="upload-preview"><img src="<%= settings.site_logo %>" alt="Logo预览" style="max-height:60px;"></div>
+          <% } %>
+        </div>
+        <div class="form-group">
+          <label for="copyright">版权信息</label>
+          <input type="text" id="copyright" name="copyright" value="<%= settings && settings.copyright ? settings.copyright : '' %>">
+        </div>
+        <div class="form-group">
+          <label>底部链接</label>
+          <div id="footerLinksContainer">
+            <!-- 动态渲染已有链接 -->
+          </div>
+          <button type="button" class="btn btn-add-link" id="addLinkBtn">+ 添加链接</button>
+          <input type="hidden" name="footer_links" id="footer_links" value="<%= settings && settings.footer_links ? settings.footer_links : '[]' %>">
+          <span class="help-text">点击"添加链接"按钮新增链接，点击后自动生成 JSON 格式</span>
+        </div>
+        <div class="form-group">
+          <label for="start_time">站点起始时间</label>
+          <input type="date" id="start_time" name="start_time" value="<%= settings && settings.start_time ? settings.start_time : '' %>">
+          <span class="help-text">用于显示"本站已运行 X 年"</span>
+        </div>
+
+        <hr class="section-divider">
+        <h3>图片上传配置</h3>
+
+        <div class="form-group">
+          <label>上传方式</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="upload_type" value="local" <%= (!settings || !settings.upload_type || settings.upload_type === 'local') ? 'checked' : '' %>>
+              本地存储
+            </label>
+            <label>
+              <input type="radio" name="upload_type" value="qiniu" <%= (settings && settings.upload_type === 'qiniu') ? 'checked' : '' %>>
+              七牛云
+            </label>
+          </div>
+          <span class="help-text">本地存储：图片保存在项目公开目录，自动使用 UUID 格式命名；七牛云：需配置下方参数后才可启用</span>
+        </div>
+
+        <div id="qiniuConfig" style="<%= (settings && settings.upload_type === 'qiniu') ? '' : 'display:none;' %>">
+          <div class="form-group">
+            <label for="qiniu_access_key">Access Key</label>
+            <input type="text" id="qiniu_access_key" name="qiniu_access_key" value="<%= settings && settings.qiniu_access_key ? settings.qiniu_access_key : '' %>" placeholder="七牛云 Access Key">
+          </div>
+          <div class="form-group">
+            <label for="qiniu_secret_key">Secret Key</label>
+            <input type="password" id="qiniu_secret_key" name="qiniu_secret_key" value="<%= settings && settings.qiniu_secret_key ? settings.qiniu_secret_key : '' %>" placeholder="七牛云 Secret Key">
+          </div>
+          <div class="form-group">
+            <label for="qiniu_bucket">Bucket（空间名称）</label>
+            <input type="text" id="qiniu_bucket" name="qiniu_bucket" value="<%= settings && settings.qiniu_bucket ? settings.qiniu_bucket : '' %>" placeholder="存储空间名称">
+          </div>
+          <div class="form-group">
+            <label for="qiniu_domain">域名</label>
+            <input type="text" id="qiniu_domain" name="qiniu_domain" value="<%= settings && settings.qiniu_domain ? settings.qiniu_domain : '' %>" placeholder="例如: https://cdn.example.com">
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary">保存设置</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+  (function() {
+    // ========== 图片上传 ==========
+    document.querySelectorAll('.btn-upload').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var targetId = this.dataset.target;
+        triggerUpload(targetId);
+      });
+    });
+
+    function triggerUpload(targetId) {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        uploadImage(file, targetId);
+      };
+      input.click();
+    }
+
+    function uploadImage(file, targetId) {
+      var btn = document.querySelector('[data-target="' + targetId + '"]');
+      var originalText = btn.textContent;
+      btn.textContent = '上传中...';
+      btn.disabled = true;
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      fetch('/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          var targetInput = document.getElementById(targetId);
+          targetInput.value = data.url;
+          // 如果是 site_logo，显示预览
+          if (targetId === 'site_logo') {
+            var preview = document.querySelector('.upload-preview');
+            if (!preview) {
+              preview = document.createElement('div');
+              preview.className = 'upload-preview';
+              targetInput.parentNode.parentNode.appendChild(preview);
+            }
+            preview.innerHTML = '<img src="' + data.url + '" alt="Logo预览" style="max-height:60px;">';
+          }
+        } else {
+          alert('上传失败: ' + data.message);
+        }
+      })
+      .catch(function(err) {
+        alert('上传失败: ' + (err.message || '网络错误'));
+      })
+      .finally(function() {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    // ========== 底部链接管理 ==========
+    var container = document.getElementById('footerLinksContainer');
+    var hiddenInput = document.getElementById('footer_links');
+    var links = [];
+
+    // 解析已有链接
+    try {
+      var raw = hiddenInput.value;
+      if (raw && raw.trim()) {
+        links = JSON.parse(raw);
+      }
+    } catch(e) {
+      links = [];
+    }
+
+    function renderLinks() {
+      container.innerHTML = '';
+      links.forEach(function(link, index) {
+        var row = document.createElement('div');
+        row.className = 'footer-link-row';
+        row.innerHTML =
+          '<input type="text" class="link-name" value="' + escapeHtml(link.name || '') + '" placeholder="链接名称" data-index="' + index + '">' +
+          '<input type="text" class="link-url" value="' + escapeHtml(link.url || '') + '" placeholder="链接地址" data-index="' + index + '">' +
+          '<button type="button" class="btn btn-danger btn-sm btn-remove-link" data-index="' + index + '">删除</button>';
+        container.appendChild(row);
+      });
+      updateJson();
+
+      // 绑定删除事件
+      container.querySelectorAll('.btn-remove-link').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var idx = parseInt(this.dataset.index);
+          links.splice(idx, 1);
+          renderLinks();
+        });
+      });
+
+      // 绑定输入事件
+      container.querySelectorAll('.link-name').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var idx = parseInt(this.dataset.index);
+          links[idx].name = this.value;
+          updateJson();
+        });
+      });
+      container.querySelectorAll('.link-url').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var idx = parseInt(this.dataset.index);
+          links[idx].url = this.value;
+          updateJson();
+        });
+      });
+    }
+
+    function updateJson() {
+      hiddenInput.value = JSON.stringify(links);
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    document.getElementById('addLinkBtn').addEventListener('click', function() {
+      links.push({ name: '', url: '' });
+      renderLinks();
+    });
+
+    renderLinks();
+
+    // ========== 七牛云配置切换 ==========
+    var qiniuConfig = document.getElementById('qiniuConfig');
+    document.querySelectorAll('input[name="upload_type"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        qiniuConfig.style.display = this.value === 'qiniu' ? '' : 'none';
+      });
+    });
+  })();
+  </script>
+</body>
+</html>

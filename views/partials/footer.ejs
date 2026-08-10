@@ -1,0 +1,29 @@
+<%
+var footerLinks = [];
+try {
+  if (locals.footerLinks) {
+    footerLinks = typeof footerLinks === 'string' ? JSON.parse(footerLinks) : footerLinks;
+  }
+} catch(e) {
+  footerLinks = [];
+}
+%>
+
+<footer class="site-footer">
+  <% if (footerLinks.length > 0) { %>
+  <div class="footer-links">
+    <span class="footer-links-label">友情链接：</span>
+    <% footerLinks.forEach(function(link) { %>
+      <a href="<%= link.url %>" target="_blank" rel="noopener"><%= link.name %></a>
+    <% }); %>
+  </div>
+  <% } %>
+
+  <div class="footer-copyright">
+    <p>&copy; <%= currentYear || new Date().getFullYear() %> <%= siteName || '李拾肆博客' %></p>
+  </div>
+
+  <div class="footer-powered">
+    <p>Powered by Express &amp; SQLite</p>
+  </div>
+</footer>

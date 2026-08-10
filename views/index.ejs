@@ -1,0 +1,96 @@
+<div class="article-list-page">
+  <div class="page-header">
+    <% if (locals.search && search) { %>
+      <h1 class="page-title">搜索：<%= search %></h1>
+      <p class="page-subtitle">共找到 <%= total %> 篇文章</p>
+    <% } else if (locals.currentCategory && currentCategory) { %>
+      <h1 class="page-title"><%= currentCategory.name %></h1>
+      <% if (currentCategory.description) { %>
+        <p class="page-subtitle"><%= currentCategory.description %></p>
+      <% } %>
+    <% } else { %>
+      <h1 class="page-title">首页</h1>
+    <% } %>
+  </div>
+
+  <% if (locals.articles && articles.length > 0) { %>
+  <div class="article-list">
+    <% articles.forEach(function(article) { %>
+    <article class="article-item" onclick="location.href='/article/<%= article.id %>'" style="cursor: pointer;">
+      <% if (article.cover_image) { %>
+      <div class="article-cover">
+        <img src="<%= article.cover_image %>" alt="<%= article.title %>" loading="lazy">
+      </div>
+      <% } %>
+      <div class="article-body">
+        <div class="article-header-row">
+          <% if (article.category_name) { %>
+          <a href="/category/<%= article.category_slug || article.category_name %>" class="article-category-badge" onclick="event.stopPropagation();"><%= article.category_name %></a>
+          <% } %>
+          <h2 class="article-title">
+            <%= article.title %>
+          </h2>
+        </div>
+        <% if (article.excerpt) { %>
+        <p class="article-excerpt"><%= article.excerpt %></p>
+        <% } %>
+        <div class="article-meta-bottom">
+          <div class="meta-left">
+            <span class="meta-item meta-date">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+              <%= article.created_at %>
+            </span>
+            <span class="meta-item meta-comments">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+              <%= article.comment_count || 0 %> 条评论
+            </span>
+            <span class="meta-item meta-views">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+              <%= article.view_count || 0 %> 热度
+            </span>
+            <span class="meta-item meta-likes">
+              <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              <%= article.like_count || 0 %> 人点赞
+            </span>
+          </div>
+          <span class="read-more">阅读全文 &rsaquo;</span>
+        </div>
+      </div>
+    </article>
+    <% }); %>
+  </div>
+
+  <% if (locals.totalPages && totalPages > 1) { %>
+  <nav class="pagination">
+    <% if (page > 1) { %>
+      <a href="?page=<%= page - 1 %><%= locals.search && search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-link pagination-prev">&laquo; 上一页</a>
+    <% } else { %>
+      <span class="pagination-link pagination-prev disabled">&laquo; 上一页</span>
+    <% } %>
+
+    <div class="pagination-numbers">
+      <% for (var i = 1; i <= totalPages; i++) { %>
+        <% if (i === page) { %>
+          <span class="pagination-link pagination-current"><%= i %></span>
+        <% } else if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) { %>
+          <a href="?page=<%= i %><%= locals.search && search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-link"><%= i %></a>
+        <% } else if (i === page - 3 || i === page + 3) { %>
+          <span class="pagination-ellipsis">...</span>
+        <% } %>
+      <% } %>
+    </div>
+
+    <% if (page < totalPages) { %>
+      <a href="?page=<%= page + 1 %><%= locals.search && search ? '&search=' + encodeURIComponent(search) : '' %>" class="pagination-link pagination-next">下一页 &raquo;</a>
+    <% } else { %>
+      <span class="pagination-link pagination-next disabled">下一页 &raquo;</span>
+    <% } %>
+  </nav>
+  <% } %>
+
+  <% } else { %>
+  <div class="empty-state">
+    <p>暂无文章</p>
+  </div>
+  <% } %>
+</div>
