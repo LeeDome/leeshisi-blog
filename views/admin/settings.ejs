@@ -20,6 +20,7 @@
       <a href="/admin/pages">页面管理</a>
       <a href="/admin/settings" class="active">站点设置</a>
       <a href="/admin/account">账号设置</a>
+      <a href="/admin/ai">AI 站长</a>
       <a href="/admin/database">数据库管理</a>
       <a href="/admin/logout" class="logout-link">退出</a>
     </nav>
@@ -69,7 +70,7 @@
         </div>
         <div class="form-group">
           <label for="icp_record">备案号</label>
-          <input type="text" id="icp_record" name="icp_record" value="<%= settings && settings.icp_record ? settings.icp_record : '' %>" placeholder="例如：桂ICP备2024032732号-4">
+          <input type="text" id="icp_record" name="icp_record" value="<%= settings && settings.icp_record ? settings.icp_record : '' %>" placeholder="例如：桂ICP备12345678号">
           <span class="help-text">填写后将在页面底部显示，点击可跳转到工信部备案查询网站</span>
         </div>
 

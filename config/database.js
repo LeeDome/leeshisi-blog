@@ -201,6 +201,8 @@ function initSchema() {
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_bucket VARCHAR(100) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_domain VARCHAR(255) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN icp_record VARCHAR(255) DEFAULT \'\''); } catch(_) {}
+  // AI 评论审核字段兼容
+  try { db.run('ALTER TABLE comments ADD COLUMN ai_moderated INTEGER DEFAULT 0'); } catch(_) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,6 +235,40 @@ function initSchema() {
     created_at DATETIME DEFAULT (datetime('now','localtime'))
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS ai_providers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(50) NOT NULL,
+    provider_type VARCHAR(30) DEFAULT 'custom',
+    api_url VARCHAR(255) NOT NULL,
+    api_key VARCHAR(255) NOT NULL,
+    model_id VARCHAR(100) NOT NULL,
+    is_multimodal INTEGER DEFAULT 0,
+    input_tokens INTEGER,
+    output_tokens INTEGER,
+    thinking_mode INTEGER DEFAULT 0,
+    functions TEXT DEFAULT '[]',
+    created_at DATETIME DEFAULT (datetime('now','localtime')),
+    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
+  // 兼容旧表：添加上下文限制字段
+  try { db.run('ALTER TABLE ai_providers ADD COLUMN input_tokens INTEGER'); } catch(_) {}
+  try { db.run('ALTER TABLE ai_providers ADD COLUMN output_tokens INTEGER'); } catch(_) {}
+  try { db.run('ALTER TABLE ai_providers ADD COLUMN thinking_mode INTEGER DEFAULT 0'); } catch(_) {}
+
+  db.run(`CREATE TABLE IF NOT EXISTS ai_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    action_type VARCHAR(20) NOT NULL,  -- reply/moderate
+    comment_id INTEGER,
+    article_id INTEGER,
+    provider_id INTEGER,
+    request_content TEXT,
+    response_content TEXT,
+    result VARCHAR(20),  -- ok/violation/error
+    duration INTEGER,  -- 耗时毫秒
+    created_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
   saveDb();
 }
 
@@ -245,8 +281,8 @@ async function seedData() {
 
   const categories = all('SELECT * FROM categories');
   if (categories.length === 0) {
+    // 注意：不创建"首页"分类，导航栏已有内置的首页入口
     const cats = [
-      ['首页', 'home', '首页文章'],
       ['项目', 'project', '项目跟踪'],
       ['笔记', 'note', '学习笔记'],
       ['杂谈', 'essay', '杂谈随笔'],

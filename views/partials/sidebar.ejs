@@ -55,11 +55,16 @@
 
   <% if (locals.tagCloud && tagCloud.length > 0) { %>
   <div class="sidebar-card">
-    <h4 class="sidebar-title">标签云</h4>
+    <h4 class="sidebar-title">标签</h4>
     <div class="tag-cloud">
-      <% var maxCount = Math.max.apply(null, tagCloud.map(function(t) { return t.count; })); %>
+      <% var counts = tagCloud.map(function(t) { return Number(t.count) || 0; }); %>
+      <% var maxCount = Math.max.apply(null, counts); %>
+      <% var minCount = Math.min.apply(null, counts); %>
+      <% var spread = maxCount - minCount; %>
       <% tagCloud.forEach(function(tag) { %>
-        <% var fontSize = 12 + Math.round((tag.count / maxCount) * 16); %>
+        <% var fontSize = spread > 0
+              ? 11 + Math.round(((Number(tag.count) - minCount) / spread) * 9)
+              : 14; %>
         <a href="/tag/<%= tag.id %>" class="tag-item" style="font-size: <%= fontSize %>px;"><%= tag.name %></a>
       <% }); %>
     </div>

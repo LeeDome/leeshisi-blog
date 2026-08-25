@@ -1,0 +1,3 @@
+<% comments.forEach(function(comment) { %>
+  <%- include('_comment-item', { comment: comment, article: article, page: page, votedCommentMap: votedCommentMap, gravatar: gravatar }) %>
+<% }); %>

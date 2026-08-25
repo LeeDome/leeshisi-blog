@@ -20,6 +20,7 @@ router.post('/comment', commentController.create);
 router.post('/comment/create', commentController.create);
 router.post('/comment/like', commentController.like);
 router.post('/comment/dislike', commentController.dislike);
+router.get('/comment/load', commentController.loadMore);
 router.get('/api/qq-info', pageController.qqInfo);
 router.get('/about', pageController.about);
 router.get('/message', pageController.message);

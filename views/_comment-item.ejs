@@ -1,0 +1,111 @@
+<li class="comment-item" id="comment-<%= comment.id %>">
+  <div class="comment-avatar">
+    <img src="<%= comment.is_author ? authorAvatar : gravatar(comment.email, 48) %>" alt="<%= comment.nickname %>">
+  </div>
+  <div class="comment-body">
+    <div class="comment-meta">
+      <strong class="comment-nickname">
+        <% if (comment.website) { %>
+        <a href="<%= comment.website %>" target="_blank" rel="noopener nofollow"><%= comment.nickname %></a>
+        <% } else { %>
+        <%= comment.nickname %>
+        <% } %>
+      </strong>
+      <% if (locals.comment.reply_to) { %>
+        <span class="comment-replyto">回复 <%= comment.reply_to %></span>
+      <% } %>
+      <span class="comment-time"><%= comment.created_at %></span>
+    </div>
+    <div class="comment-content"><%- renderMarkdown(comment.content) %></div>
+    <div class="comment-actions">
+      <button class="comment-action-btn comment-like-btn<%= (votedCommentMap[comment.id] === 'like') ? ' active' : '' %>" data-comment-id="<%= comment.id %>" data-action="like">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+        <span><%= comment.like_count || 0 %></span>
+      </button>
+      <button class="comment-action-btn comment-dislike-btn<%= (votedCommentMap[comment.id] === 'dislike') ? ' active' : '' %>" data-comment-id="<%= comment.id %>" data-action="dislike">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+        <span><%= comment.dislike_count || 0 %></span>
+      </button>
+      <button class="comment-action-btn comment-reply-btn" data-comment-id="<%= comment.id %>">回复</button>
+    </div>
+    <div class="comment-reply-form" id="reply-form-<%= comment.id %>" style="display:none;">
+      <form action="/comment" method="POST">
+        <% if (locals.article) { %>
+        <input type="hidden" name="article_id" value="<%= article.id %>">
+        <input type="hidden" name="page_type" value="article">
+        <% } else if (locals.page) { %>
+        <input type="hidden" name="page_type" value="<%= page.slug %>">
+        <% } %>
+        <input type="hidden" name="parent_id" value="<%= comment.id %>">
+        <div class="comment-form-row">
+          <input type="email" name="email" class="comment-input" placeholder="邮箱 *" required>
+          <input type="text" name="nickname" class="comment-input" placeholder="昵称 *" required>
+          <input type="url" name="website" class="comment-input" placeholder="网站（可选）">
+        </div>
+        <textarea name="content" class="comment-textarea" placeholder="写下你的回复..." required></textarea>
+        <button type="submit" class="comment-submit-btn">提交回复</button>
+      </form>
+    </div>
+    <% if (comment.children) { %>
+    <ul class="comment-children" id="comment-children-<%= comment.id %>">
+      <% comment.children.forEach(function(child) { %>
+      <li class="comment-item" id="comment-<%= child.id %>">
+        <div class="comment-avatar">
+          <img src="<%= child.is_author ? authorAvatar : gravatar(child.email, 48) %>" alt="<%= child.nickname %>">
+        </div>
+        <div class="comment-body">
+          <div class="comment-meta">
+            <strong class="comment-nickname">
+              <% if (child.website) { %>
+              <a href="<%= child.website %>" target="_blank" rel="noopener nofollow"><%= child.nickname %></a>
+              <% } else { %>
+              <%= child.nickname %>
+              <% } %>
+            </strong>
+            <% if (child.reply_to) { %>
+              <span class="comment-replyto">回复 <%= child.reply_to %></span>
+            <% } %>
+            <span class="comment-time"><%= child.created_at %></span>
+          </div>
+          <div class="comment-content"><%- renderMarkdown(child.content) %></div>
+          <div class="comment-actions">
+            <button class="comment-action-btn comment-like-btn<%= (votedCommentMap[child.id] === 'like') ? ' active' : '' %>" data-comment-id="<%= child.id %>" data-action="like">
+              <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+              <span><%= child.like_count || 0 %></span>
+            </button>
+            <button class="comment-action-btn comment-dislike-btn<%= (votedCommentMap[child.id] === 'dislike') ? ' active' : '' %>" data-comment-id="<%= child.id %>" data-action="dislike">
+              <svg viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+              <span><%= child.dislike_count || 0 %></span>
+            </button>
+            <button class="comment-action-btn comment-reply-btn" data-comment-id="<%= child.id %>">回复</button>
+          </div>
+          <div class="comment-reply-form" id="reply-form-<%= child.id %>" style="display:none;">
+            <form action="/comment" method="POST">
+              <% if (locals.article) { %>
+              <input type="hidden" name="article_id" value="<%= article.id %>">
+              <input type="hidden" name="page_type" value="article">
+              <% } else if (locals.page) { %>
+              <input type="hidden" name="page_type" value="<%= page.slug %>">
+              <% } %>
+              <input type="hidden" name="parent_id" value="<%= child.id %>">
+              <div class="comment-form-row">
+                <input type="email" name="email" class="comment-input" placeholder="邮箱 *" required>
+                <input type="text" name="nickname" class="comment-input" placeholder="昵称 *" required>
+                <input type="url" name="website" class="comment-input" placeholder="网站（可选）">
+              </div>
+              <textarea name="content" class="comment-textarea" placeholder="写下你的回复..." required></textarea>
+              <button type="submit" class="comment-submit-btn">提交回复</button>
+            </form>
+          </div>
+        </div>
+      </li>
+      <% }); %>
+    </ul>
+    <% if (comment.hasMoreChildren) { %>
+    <div class="load-more-replies-wrap">
+      <button type="button" class="load-more-replies-btn" data-root-id="<%= comment.id %>" data-next-page="1" data-loaded="false">展开更多回复 (<%= comment.childrenTotal %>)</button>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+</li>

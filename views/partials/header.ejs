@@ -7,7 +7,7 @@
     <nav class="site-nav" id="siteNav">
       <a href="/" class="nav-link <%= currentPath === '/' ? 'active' : '' %>">首页</a>
       <% categories.forEach(function(cat) { %>
-        <% if (cat.slug === 'gallery') return; %>
+        <% if (cat.slug === 'gallery' || cat.slug === 'home') return; %>
         <a href="/category/<%= cat.slug %>" class="nav-link <%= currentPath && currentPath.startsWith('/category/' + cat.slug) ? 'active' : '' %>"><%= cat.name %></a>
       <% }); %>
       <a href="/gallery" class="nav-link <%= currentPath === '/gallery' ? 'active' : '' %>">图册</a>

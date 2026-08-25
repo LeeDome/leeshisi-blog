@@ -44,6 +44,8 @@ app.use(function(req, res, next) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+const { renderMarkdown } = require('./utils/markdown');
+
 app.use(function(req, res, next) {
   res.locals.currentPath = req.path;
   res.locals.user = req.session.user || null;
@@ -55,6 +57,7 @@ app.use(function(req, res, next) {
     }
     return '/images/default-avatar.svg';
   };
+  res.locals.renderMarkdown = renderMarkdown;
   next();
 });
 

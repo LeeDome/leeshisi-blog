@@ -156,6 +156,7 @@ exports.detail = async (req, res, next) => {
       commentTotalPages: commentResult.totalPages,
       commentSort: sort,
       comment_submitted: req.query.comment_submitted,
+      comment_error: req.query.comment_error,
       votedCommentIds,
       votedCommentMap
     }, function(err, html) {
@@ -172,11 +173,19 @@ exports.detail = async (req, res, next) => {
   }
 };
 
+// 获取客户端真实 IP（优先取 X-Forwarded-For，兼容 Nginx 反向代理）
+function getClientIp(req) {
+  return req.headers['x-forwarded-for'] && req.headers['x-forwarded-for'].split(',')[0].trim()
+    || req.connection.remoteAddress
+    || req.socket.remoteAddress
+    || '127.0.0.1';
+}
+
 exports.rate = async (req, res) => {
   try {
     const { article_id, score } = req.body;
-    console.log('[rate] article_id:', article_id, 'score:', score, 'ip:', req.ip || req.connection.remoteAddress);
-    const ip = req.ip || req.connection.remoteAddress;
+    const ip = getClientIp(req);
+    console.log('[rate] article_id:', article_id, 'score:', score, 'ip:', ip);
 
     await getDb();
 
@@ -222,7 +231,7 @@ exports.rate = async (req, res) => {
 exports.like = async (req, res) => {
   try {
     const { article_id } = req.body;
-    const ip = req.ip || req.connection.remoteAddress;
+    const ip = getClientIp(req);
 
     await getDb();
 

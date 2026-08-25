@@ -91,6 +91,7 @@ exports.about = async (req, res) => {
       commentPage: commentResult.page,
       commentTotalPages: commentResult.totalPages,
       comment_submitted: req.query.comment_submitted,
+      comment_error: req.query.comment_error,
       votedCommentIds,
       votedCommentMap
     });
@@ -148,6 +149,7 @@ exports.message = async (req, res) => {
       commentPage: commentResult.page,
       commentTotalPages: commentResult.totalPages,
       comment_submitted: req.query.comment_submitted,
+      comment_error: req.query.comment_error,
       votedCommentIds,
       votedCommentMap
     });

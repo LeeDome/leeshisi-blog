@@ -6,6 +6,47 @@
   <title>编辑页面 - 管理后台</title>
   <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css">
+  <style>
+    .md-editor-wrap { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .md-editor-body { display: flex; min-height: 500px; }
+    .md-editor-body textarea {
+      flex: 1; border: none; resize: none; padding: 16px;
+      font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+      font-size: 14px; line-height: 1.6; outline: none; tab-size: 2;
+    }
+    .md-preview {
+      flex: 1; padding: 16px 20px; overflow-y: auto;
+      border-left: 1px solid #ddd; background: #fff;
+      line-height: 1.8; font-size: 15px;
+    }
+    .md-preview h1,.md-preview h2,.md-preview h3,.md-preview h4,.md-preview h5,.md-preview h6 { margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 600; }
+    .md-preview h2 { border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .md-preview p { margin-bottom: 0.8em; }
+    .md-preview a { color: #0366d6; text-decoration: underline; }
+    .md-preview img { max-width: 100%; border-radius: 4px; }
+    .md-preview pre {
+      background: #1c1e22; padding: 14px 18px; border-radius: 6px;
+      overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 12px 0;
+      border: 1px solid #2a2c32;
+    }
+    .md-preview :not(pre) > code {
+      background: #f0f0f0; padding: 2px 6px; border-radius: 3px; color: #d63384;
+    }
+    .md-preview blockquote {
+      border-left: 3px solid #0366d6; padding: 8px 16px; color: #666;
+      background: #f6f8fa; border-radius: 0 4px 4px 0; margin: 12px 0;
+    }
+    .md-preview ul, .md-preview ol { padding-left: 24px; margin: 8px 0; }
+    .md-preview table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+    .md-preview th, .md-preview td { border: 1px solid #ddd; padding: 6px 12px; text-align: left; }
+    .md-preview th { background: #f6f8fa; font-weight: 600; }
+    .md-preview .mermaid {
+      background: #fafafa; border-radius: 6px; padding: 16px;
+      text-align: center; margin: 12px 0;
+    }
+    .md-preview .mermaid svg { max-width: 100%; height: auto; }
+  </style>
 </head>
 <body>
   <aside class="admin-sidebar">
@@ -20,6 +61,7 @@
       <a href="/admin/pages" class="active">页面管理</a>
       <a href="/admin/settings">站点设置</a>
       <a href="/admin/account">账号设置</a>
+      <a href="/admin/ai">AI 站长</a>
       <a href="/admin/database">数据库管理</a>
       <a href="/admin/logout" class="logout-link">退出</a>
     </nav>
@@ -50,8 +92,13 @@
           </div>
         </div>
         <div class="form-group">
-          <label for="content">内容</label>
-          <textarea id="content" name="content" required><%= page.content || '' %></textarea>
+          <label for="content">内容 (Markdown)</label>
+          <div class="md-editor-wrap">
+            <div class="md-editor-body">
+              <textarea id="content" name="content" required><%= page.content || '' %></textarea>
+              <div class="md-preview" id="mdPreview"></div>
+            </div>
+          </div>
         </div>
         <div>
           <button type="submit" class="btn btn-primary">保存</button>
@@ -60,5 +107,92 @@
       </form>
     </div>
   </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>
+  // 兼容性 polyfill：旧浏览器不支持 Object.hasOwn（ES2022）
+  if (!Object.hasOwn) {
+    Object.hasOwn = function(obj, prop) {
+      return Object.prototype.hasOwnProperty.call(obj, prop);
+    };
+  }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+  (function() {
+    var textarea = document.getElementById('content');
+    var preview = document.getElementById('mdPreview');
+    var renderTimer = null;
+
+    if (!window.marked) return;
+
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && window.hljs && hljs.getLanguage(lang)) {
+          try { return hljs.highlight(code, { language: lang }).value; } catch(_) {}
+        }
+        return window.hljs ? hljs.highlightAuto(code).value : code;
+      },
+      gfm: true,
+      breaks: true
+    });
+
+    // Mermaid 图表渲染（与客户端保持一致）
+    function renderMermaid() {
+      var pres = preview.querySelectorAll('pre');
+      var nodes = [];
+      pres.forEach(function(pre) {
+        var code = pre.querySelector('code');
+        var text = code ? (code.textContent || code.innerText) : pre.textContent;
+        text = text.trim();
+        if (!text) return;
+
+        var mText = null;
+        if (/^(graph |flowchart |sequenceDiagram|classDiagram|erDiagram|gantt )/.test(text)) {
+          mText = text;
+        }
+        if (text.indexOf('pie showData') === 0) {
+          mText = text.replace(/^pie showData\s*\n\s*title\s+/, 'pie title ');
+        }
+
+        if (mText) {
+          var div = document.createElement('div');
+          div.className = 'mermaid';
+          div.textContent = mText;
+          pre.parentNode.replaceChild(div, pre);
+          nodes.push(div);
+        }
+      });
+      if (nodes.length && window.mermaid) {
+        try {
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            themeVariables: {
+              primaryColor: '#e5e7eb',
+              primaryTextColor: '#2a2c32',
+              primaryBorderColor: '#9ca3af',
+              lineColor: '#6b7280',
+              secondaryColor: '#f3f4f6',
+              tertiaryColor: '#f9fafb'
+            }
+          });
+          mermaid.run({ nodes: nodes }).catch(function(e) { console.warn('Mermaid 渲染失败:', e); });
+        } catch (e) { console.warn('Mermaid 渲染失败:', e); }
+      }
+    }
+
+    function updatePreview() {
+      preview.innerHTML = marked.parse(textarea.value);
+      renderMermaid();
+    }
+
+    textarea.addEventListener('input', function() {
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(updatePreview, 300);
+    });
+    updatePreview();
+  })();
+  </script>
 </body>
 </html>

@@ -1108,12 +1108,82 @@ ol {
   color: var(--text-muted);
 }
 
+.comment-replyto {
+  font-size: 0.78em;
+  color: var(--accent);
+  margin-left: 6px;
+}
+.comment-replyto::before {
+  content: '↩ ';
+}
+
 .comment-content,
 .comment-item .comment-body p,
 .comment-item .comment-body {
   color: var(--text-secondary);
   line-height: 1.6;
   font-size: 0.92em;
+}
+
+.comment-content p {
+  margin: 4px 0;
+}
+.comment-content p:first-child {
+  margin-top: 0;
+}
+.comment-content p:last-child {
+  margin-bottom: 0;
+}
+.comment-content strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.comment-content code {
+  background: rgba(0,0,0,0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: Consolas, 'Courier New', monospace;
+}
+.comment-content pre {
+  background: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.comment-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+.comment-content ul,
+.comment-content ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.comment-content li {
+  margin: 2px 0;
+}
+.comment-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.comment-content blockquote {
+  border-left: 3px solid var(--border);
+  margin: 6px 0;
+  padding: 4px 12px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-radius: 0 4px 4px 0;
+}
+.comment-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+.comment-content em {
+  font-style: italic;
 }
 
 .comment-actions {
@@ -1173,6 +1243,37 @@ ol {
   align-items: center;
   gap: 5px;
   margin: 30px 0;
+}
+
+/* 加载更多评论/回复按钮 */
+.load-more-comments-wrap,
+.load-more-replies-wrap {
+  text-align: center;
+  margin: 20px 0;
+}
+.load-more-comments-wrap {
+  margin: 10px 0 30px;
+}
+.load-more-comments-btn,
+.load-more-replies-btn {
+  display: inline-block;
+  padding: 8px 22px;
+  font-size: 0.88em;
+  color: var(--text-secondary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.load-more-comments-btn:hover,
+.load-more-replies-btn:hover {
+  color: var(--bg-card);
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+.load-more-replies-wrap {
+  margin: 8px 0 2px;
 }
 
 .pagination a,
@@ -2088,6 +2189,20 @@ ol {
   overflow: visible !important;
 }
 
+/* mermaid 渲染失败时的降级代码块样式 */
+.mermaid-fallback {
+  margin: 12px 0;
+  padding: 12px 16px;
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border-color, #d1d5db);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary, #6b7280);
+  text-align: left;
+}
+
 /* ============================================================
    Toast Notification
    ============================================================ */
@@ -2144,7 +2259,8 @@ ol {
   .comment-form,
   .comment-form-wrap,
   .pagination,
-  .hamburger {
+  .hamburger,
+  .toc-float {
     display: none;
   }
 
@@ -2156,5 +2272,190 @@ ol {
 
   .content-area {
     max-width: 100%;
+  }
+}
+
+/* ============================================================
+   Article TOC Float (悬浮目录)
+   ============================================================ */
+.toc-float {
+  position: fixed;
+  left: 20px;
+  top: 80px;
+  width: 220px;
+  max-height: calc(100vh - 120px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  cursor: move;
+  transition: box-shadow 0.2s;
+}
+
+.toc-float:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.toc-float-header {
+  padding: 10px 12px;
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.toc-float-title {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toc-float-close {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  line-height: 1;
+}
+
+.toc-float-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.toc-float-reset {
+  font-size: 0.8em;
+  color: var(--accent);
+  cursor: pointer;
+  margin-left: 8px;
+  text-decoration: none;
+}
+
+.toc-float-reset:hover {
+  text-decoration: underline;
+}
+
+.toc-float-body {
+  padding: 10px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.toc-float-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-float-item {
+  padding: 4px 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toc-float-item a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85em;
+  cursor: pointer;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s, padding-left 0.2s;
+}
+
+.toc-float-item a:hover {
+  color: var(--accent);
+  padding-left: 4px;
+}
+
+.toc-float-item.level-2 {
+  padding-left: 24px;
+}
+
+.toc-float-item.level-3 {
+  padding-left: 36px;
+}
+
+.toc-float-item.level-4 {
+  padding-left: 48px;
+}
+
+/* 移动端点击展开按钮 */
+.toc-float-toggle {
+  position: fixed;
+  left: 12px;
+  top: 80px;
+  width: 40px;
+  height: 40px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+}
+
+.toc-float-toggle:hover {
+  background: var(--accent-hover);
+}
+
+/* 给标题添加滚动边距，避开 fixed header */
+.article-content h1,
+.article-content h2,
+.article-content h3,
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  scroll-margin-top: 80px;
+}
+
+/* ============================================================
+   Responsive - TOC Float
+   ============================================================ */
+@media (max-width: 1024px) {
+  .toc-float {
+    width: 200px;
+    left: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toc-float {
+    display: none;
+    left: 10px;
+    width: calc(100vw - 80px);
+    max-height: 60vh;
+  }
+
+  .toc-float.visible {
+    display: flex;
+  }
+
+  .toc-float-toggle {
+    display: flex;
   }
 }

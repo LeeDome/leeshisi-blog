@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { isAuthenticated, redirectIfAuthenticated } = require('../middleware/auth');
 const adminController = require('../controllers/adminController');
+const aiController = require('../controllers/aiController');
 
 router.get('/admin/login', redirectIfAuthenticated, adminController.loginPage);
 router.post('/admin/login', adminController.login);
@@ -54,5 +55,12 @@ router.get('/admin/database', isAuthenticated, adminController.database);
 router.get('/admin/database/backup', isAuthenticated, adminController.databaseBackup);
 router.get('/admin/database/import', isAuthenticated, adminController.databaseImportConfirm);
 router.post('/admin/database/import', isAuthenticated, adminController.databaseImport);
+
+// AI 站长配置
+router.get('/admin/ai', isAuthenticated, aiController.settingsPage);
+router.post('/admin/ai/models', isAuthenticated, aiController.listModels);
+router.post('/admin/ai', isAuthenticated, aiController.save);
+router.post('/admin/ai/:id/delete', isAuthenticated, aiController.delete);
+router.post('/admin/ai/polish', isAuthenticated, aiController.polish);
 
 module.exports = router;
