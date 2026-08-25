@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>站点设置 - 管理后台</title>
+  <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
@@ -65,6 +66,11 @@
           <label for="start_time">站点起始时间</label>
           <input type="date" id="start_time" name="start_time" value="<%= settings && settings.start_time ? settings.start_time : '' %>">
           <span class="help-text">用于显示"本站已运行 X 年"</span>
+        </div>
+        <div class="form-group">
+          <label for="icp_record">备案号</label>
+          <input type="text" id="icp_record" name="icp_record" value="<%= settings && settings.icp_record ? settings.icp_record : '' %>" placeholder="例如：桂ICP备2024032732号-4">
+          <span class="help-text">填写后将在页面底部显示，点击可跳转到工信部备案查询网站</span>
         </div>
 
         <hr class="section-divider">

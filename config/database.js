@@ -200,6 +200,7 @@ function initSchema() {
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_secret_key VARCHAR(255) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_bucket VARCHAR(100) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_domain VARCHAR(255) DEFAULT \'\''); } catch(_) {}
+  try { db.run('ALTER TABLE site_settings ADD COLUMN icp_record VARCHAR(255) DEFAULT \'\''); } catch(_) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

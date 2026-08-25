@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>仪表盘 - 管理后台</title>
+  <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
@@ -61,7 +62,7 @@
             <% recentArticles.slice(0, 5).forEach(function(article) { %>
             <tr>
               <td><a href="/article/<%= article.id %>"><%= article.title %></a></td>
-              <td><%= article.category ? article.category.name : '-' %></td>
+              <td><%= article.category_name || '-' %></td>
               <td><span class="badge <%= article.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= article.status === 'published' ? '已发布' : '草稿' %></span></td>
               <td><%= new Date(article.created_at).toLocaleDateString('zh-CN') %></td>
             </tr>
@@ -90,7 +91,7 @@
             <tr>
               <td><%= comment.nickname %></td>
               <td><%= comment.content ? comment.content.substring(0, 50) + (comment.content.length > 50 ? '...' : '') : '' %></td>
-              <td><%= comment.article ? '<a href="/article/' + comment.article_id + '">' + comment.article.title + '</a>' : '-' %></td>
+              <td><%= comment.article_title ? '<a href="/article/' + comment.article_id + '">' + comment.article_title + '</a>' : '-' %></td>
               <td><%= new Date(comment.created_at).toLocaleDateString('zh-CN') %></td>
             </tr>
             <% }); %>

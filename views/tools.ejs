@@ -1,0 +1,114 @@
+<div class="tools-index">
+  <header class="tools-index-header">
+    <h1 class="tools-index-title">实用工具</h1>
+    <p class="tools-index-desc">在线小工具，本地处理，不泄露隐私</p>
+  </header>
+
+  <div class="tools-list">
+    <a href="/tools/image-compress" class="tools-card">
+      <div class="tools-card-icon">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+        </svg>
+      </div>
+      <div class="tools-card-body">
+        <h3 class="tools-card-name">图片极限压缩</h3>
+        <p class="tools-card-desc">JPG/PNG/WebP，暴力压缩至30KB以下，支持拖拽上传</p>
+      </div>
+      <span class="tools-card-arrow">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+</div>
+
+<style>
+  .tools-index {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .tools-index-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .tools-index-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .tools-index-desc {
+    color: var(--text-secondary);
+    font-size: 0.95em;
+  }
+
+  .tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tools-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+
+  .tools-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+
+  .tools-card-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+  }
+
+  .tools-card-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tools-card-name {
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .tools-card-desc {
+    font-size: 0.88em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .tools-card-arrow {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    opacity: 0.4;
+    transition: opacity 0.2s;
+  }
+
+  .tools-card:hover .tools-card-arrow {
+    opacity: 0.8;
+  }
+</style>

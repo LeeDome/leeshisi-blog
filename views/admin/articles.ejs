@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文章管理 - 管理后台</title>
+  <link rel="icon" href="/favicon.svg">
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
@@ -53,7 +54,7 @@
             <% articles.forEach(function(article) { %>
             <tr>
               <td><strong><%= article.title %></strong></td>
-              <td><%= article.category ? article.category.name : '-' %></td>
+              <td><%= article.category_name || '-' %></td>
               <td><span class="badge <%= article.status === 'published' ? 'badge-published' : 'badge-draft' %>"><%= article.status === 'published' ? '已发布' : '草稿' %></span></td>
               <td><%= article.view_count || 0 %></td>
               <td><%= article.comment_count || 0 %></td>

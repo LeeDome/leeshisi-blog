@@ -13,6 +13,7 @@ async function loadCommonData(req, res, next) {
     res.locals.copyright = settings ? settings.copyright : '';
     res.locals.footerLinks = settings ? settings.footer_links : '[]';
     res.locals.siteStartTime = settings ? settings.start_time : '';
+    res.locals.icpRecord = settings ? settings.icp_record : '';
   } catch (err) {
     res.locals.settings = {};
     res.locals.siteName = '李拾肆博客';
@@ -20,6 +21,7 @@ async function loadCommonData(req, res, next) {
     res.locals.copyright = '';
     res.locals.footerLinks = '[]';
     res.locals.siteStartTime = '';
+    res.locals.icpRecord = '';
   }
 
   try {
@@ -54,7 +56,7 @@ async function loadCommonData(req, res, next) {
 
   try {
     res.locals.author = await userModel.getAuthor();
-    res.locals.authorAvatar = '/images/default-avatar.svg';
+    res.locals.authorAvatar = res.locals.author && res.locals.author.avatar ? res.locals.author.avatar : '/images/default-avatar.svg';
   } catch (err) {
     res.locals.author = null;
     res.locals.authorAvatar = '/images/default-avatar.svg';

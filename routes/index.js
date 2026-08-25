@@ -4,6 +4,7 @@ const { loadCommonData } = require('../middleware/common');
 const articleController = require('../controllers/articleController');
 const commentController = require('../controllers/commentController');
 const pageController = require('../controllers/pageController');
+const toolController = require('../controllers/toolController');
 
 router.use(loadCommonData);
 
@@ -24,5 +25,7 @@ router.get('/about', pageController.about);
 router.get('/message', pageController.message);
 router.get('/gallery', pageController.gallery);
 router.get('/gallery/:id', pageController.galleryDetail);
+router.get('/tools', toolController.index);
+router.get('/tools/image-compress', toolController.imageCompress);
 
 module.exports = router;

@@ -53,6 +53,10 @@ const update = async (data) => {
     fields.push('qiniu_domain = ?');
     values.push(data.qiniu_domain);
   }
+  if (data.icp_record !== undefined) {
+    fields.push('icp_record = ?');
+    values.push(data.icp_record);
+  }
   if (fields.length === 0) {
     return get('SELECT * FROM site_settings LIMIT 1');
   }

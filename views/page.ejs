@@ -300,6 +300,73 @@
       xhr.send();
     });
   });
+
+  // ========== Mermaid 图表渲染（饼图 / 流程图等） ==========
+  (function() {
+    var content = document.querySelector('.page-content');
+    if (!content) return;
+
+    var pres = content.querySelectorAll('pre');
+    var mermaidNodes = [];
+
+    pres.forEach(function(pre) {
+      var code = pre.querySelector('code');
+      var text = code ? (code.textContent || code.innerText) : pre.textContent;
+      text = text.trim();
+      if (!text) return;
+
+      var mText = null;
+      if (/^(graph |sequenceDiagram|classDiagram|erDiagram|gantt|flowchart )/.test(text)) {
+        mText = text;
+      }
+      if (text.indexOf('pie showData') === 0) {
+        mText = text.replace(/^pie showData\s*\n\s*title\s+/, 'pie title ');
+      }
+
+      if (mText) {
+        var div = document.createElement('div');
+        div.className = 'mermaid';
+        div.textContent = mText;
+        pre.parentNode.replaceChild(div, pre);
+        mermaidNodes.push(div);
+      }
+    });
+
+    if (mermaidNodes.length === 0) return;
+
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+    s.onload = function() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        themeVariables: {
+          primaryColor: '#e5e7eb',
+          primaryTextColor: '#2a2c32',
+          primaryBorderColor: '#9ca3af',
+          lineColor: '#6b7280',
+          secondaryColor: '#f3f4f6',
+          tertiaryColor: '#f9fafb'
+        }
+      });
+      mermaid.run({ nodes: mermaidNodes }).then(function() {
+        setTimeout(function() {
+          document.querySelectorAll('.mermaid svg').forEach(function(svg) {
+            var vb = svg.getAttribute('viewBox');
+            if (vb && svg.textContent.indexOf('pie') !== -1) {
+              var parts = vb.split(/\s+/).map(Number);
+              if (parts.length === 4) {
+                parts[0] = -60;
+                parts[2] = parts[2] + 120;
+                svg.setAttribute('viewBox', parts.join(' '));
+              }
+            }
+          });
+        }, 100);
+      });
+    };
+    document.body.appendChild(s);
+  })();
 })();
 </script>
 

@@ -601,6 +601,16 @@ table tbody tr:hover {
   background: #fafafa;
 }
 
+/* 头像预览圆形样式 */
+#avatarPreview img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  padding: 0;
+}
+
 /* ========== 底部链接行 ========== */
 .footer-link-row {
   display: flex;

@@ -177,7 +177,7 @@ exports.passwordPage = (req, res) => {
 exports.passwordUpdate = async (req, res) => {
   try {
     const { current_password, new_password, confirm_password } = req.body;
-    const { nickname, email } = req.body;
+    const { nickname, email, avatar } = req.body;
 
     const user = await userModel.findById(req.session.user.id);
     if (!user) {
@@ -207,8 +207,8 @@ exports.passwordUpdate = async (req, res) => {
       password_hash = await bcrypt.hash(new_password, 10);
     }
 
-    if (nickname !== undefined) {
-      await userModel.update(user.id, { nickname, email, password_hash });
+    if (nickname !== undefined || avatar !== undefined) {
+      await userModel.update(user.id, { nickname, email, avatar, password_hash });
     } else {
       await userModel.updatePassword(user.id, password_hash);
     }
@@ -821,7 +821,7 @@ exports.settings = async (req, res) => {
 
 exports.settingsUpdate = async (req, res) => {
   try {
-    const { site_name, site_logo, footer_links, copyright, theme, start_time, upload_type, qiniu_access_key, qiniu_secret_key, qiniu_bucket, qiniu_domain } = req.body;
+    const { site_name, site_logo, footer_links, copyright, theme, start_time, upload_type, qiniu_access_key, qiniu_secret_key, qiniu_bucket, qiniu_domain, icp_record } = req.body;
     await settingModel.update({
       site_name,
       site_logo,
@@ -833,7 +833,8 @@ exports.settingsUpdate = async (req, res) => {
       qiniu_access_key,
       qiniu_secret_key,
       qiniu_bucket,
-      qiniu_domain
+      qiniu_domain,
+      icp_record
     });
     req.session.messages = [{ type: 'success', text: '设置已保存' }];
     res.redirect('/admin/settings');

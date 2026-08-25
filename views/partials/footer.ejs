@@ -23,6 +23,12 @@ try {
     <p>&copy; <%= currentYear || new Date().getFullYear() %> <%= siteName || '李拾肆博客' %></p>
   </div>
 
+  <% if (typeof icpRecord !== 'undefined' && icpRecord) { %>
+  <div class="footer-icp">
+    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer"><%= icpRecord %></a>
+  </div>
+  <% } %>
+
   <div class="footer-powered">
     <p>Powered by Express &amp; SQLite</p>
   </div>

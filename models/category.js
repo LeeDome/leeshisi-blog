@@ -24,16 +24,16 @@ async function create({ name, slug, description }) {
   return get('SELECT * FROM categories WHERE slug = ?', [slug]);
 }
 
-async function update(id, { name, slug, description }) {
+async function update(id, data) {
   await getDb();
   const fields = [];
   const values = [];
   const allowedFields = ['name', 'slug', 'description'];
 
   for (const key of allowedFields) {
-    if (arguments[1][key] !== undefined) {
+    if (data[key] !== undefined) {
       fields.push(`${key} = ?`);
-      values.push(arguments[1][key]);
+      values.push(data[key]);
     }
   }
 

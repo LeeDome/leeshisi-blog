@@ -1,7 +1,7 @@
 <header class="site-header">
   <div class="container">
     <div class="header-logo">
-      <a href="/">李拾肆博客</a>
+      <a href="/"><%= siteName || '李拾肆博客' %></a>
     </div>
 
     <nav class="site-nav" id="siteNav">
@@ -11,6 +11,7 @@
         <a href="/category/<%= cat.slug %>" class="nav-link <%= currentPath && currentPath.startsWith('/category/' + cat.slug) ? 'active' : '' %>"><%= cat.name %></a>
       <% }); %>
       <a href="/gallery" class="nav-link <%= currentPath === '/gallery' ? 'active' : '' %>">图册</a>
+      <a href="/tools" class="nav-link <%= currentPath && currentPath.startsWith('/tools') ? 'active' : '' %>">工具</a>
       <a href="/about" class="nav-link <%= currentPath === '/about' ? 'active' : '' %>">关于</a>
       <a href="/message" class="nav-link <%= currentPath === '/message' ? 'active' : '' %>">留言</a>
       <div class="mobile-search">

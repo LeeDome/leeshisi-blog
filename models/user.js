@@ -28,7 +28,7 @@ async function update(id, data) {
   await getDb();
   const fields = [];
   const values = [];
-  const allowedFields = ['username', 'nickname', 'email', 'avatar', 'bio', 'role'];
+  const allowedFields = ['username', 'nickname', 'email', 'password_hash', 'avatar', 'bio', 'role'];
 
   for (const key of allowedFields) {
     if (data[key] !== undefined) {

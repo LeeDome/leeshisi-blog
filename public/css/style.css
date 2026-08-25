@@ -1903,6 +1903,22 @@ ol {
   margin-top: 4px;
 }
 
+.site-footer .footer-icp {
+  margin-top: 8px;
+  font-size: 0.82em;
+  opacity: 0.5;
+}
+
+.site-footer .footer-icp a {
+  color: var(--text-inverse);
+  text-decoration: none;
+}
+
+.site-footer .footer-icp a:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
 /* ============================================================
    16. Responsive - Tablet / Mobile (< 768px)
    ============================================================ */
@@ -2052,6 +2068,24 @@ ol {
   .site-footer .footer-links {
     gap: 12px;
   }
+}
+
+/* ============================================================
+   Mermaid 图表
+   ============================================================ */
+.mermaid {
+  margin: 20px 0;
+  text-align: center;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 24px 32px;
+  overflow: visible;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+  overflow: visible !important;
 }
 
 /* ============================================================
