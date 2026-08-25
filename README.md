@@ -6,7 +6,7 @@
 
 | 层级 | 技术 |
 |------|------|
-| 运行时 | Node.js 16+ |
+| 运行时 | Node.js 20+（推荐 22 / 24 LTS） |
 | Web 框架 | Express 4.x |
 | 模板引擎 | EJS + express-ejs-layouts |
 | 数据库 | SQLite（sql.js WASM 驱动，无原生依赖） |
@@ -40,7 +40,7 @@
 
 ### 前置条件
 
-- Node.js 16+
+- Node.js 20+（DOMPurify 3.3.2+ 要求 Node ≥20）
 - npm
 
 ### 安装与运行
