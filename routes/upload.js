@@ -19,5 +19,6 @@ const upload = multer({
 });
 
 router.post('/admin/upload', isAuthenticated, upload.single('image'), uploadController.upload);
+router.get('/admin/images', isAuthenticated, uploadController.listImages);
 
 module.exports = router;

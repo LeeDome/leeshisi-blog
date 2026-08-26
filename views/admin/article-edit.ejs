@@ -119,6 +119,40 @@
       animation: spin 0.6s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* 图片库模态框 */
+    .image-lib-upload {
+      margin-bottom: 16px; padding: 14px; border: 1px dashed #ccc;
+      border-radius: 8px; background: #fafafa; text-align: center;
+    }
+    .image-lib-upload .hint { color: #999; font-size: 12px; margin-top: 6px; }
+    .image-lib-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px; max-height: 45vh; overflow-y: auto;
+    }
+    .image-lib-item {
+      border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;
+      cursor: pointer; background: #fff; position: relative;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .image-lib-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-color: #1976d2; }
+    .image-lib-item.selected { border-color: #1976d2; box-shadow: 0 0 0 2px rgba(25,118,210,0.25); }
+    .image-lib-item img {
+      width: 100%; height: 90px; object-fit: cover; display: block;
+      background: #f0f0f0;
+    }
+    .image-lib-item .name {
+      font-size: 11px; color: #666; padding: 3px 6px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .image-lib-item .mask {
+      position: absolute; top: 0; left: 0; right: 0;
+      background: rgba(25,118,210,0.9); color: #fff;
+      font-size: 12px; text-align: center; padding: 4px 0;
+      display: none;
+    }
+    .image-lib-item.selected .mask { display: block; }
+    .image-lib-empty { color: #999; text-align: center; padding: 40px 0; }
+    .image-lib-loading { color: #1976d2; text-align: center; padding: 40px 0; }
   </style>
 </head>
 <body>
@@ -207,6 +241,7 @@
               <div class="sep"></div>
               <button type="button" data-action="link" title="链接">Link</button>
               <button type="button" data-action="image" title="图片">Img</button>
+              <button type="button" data-action="image-library" title="插入图片库图片">图片库</button>
               <button type="button" data-action="quote" title="引用">&gt;</button>
               <div class="sep"></div>
               <button type="button" data-action="ul" title="无序列表">UL</button>
@@ -358,6 +393,12 @@
     document.querySelectorAll('.md-editor-toolbar button[data-action]').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var action = this.dataset.action;
+
+        if (action === 'image-library') {
+          openImageLibrary();
+          return;
+        }
+
         var start = textarea.selectionStart;
         var end = textarea.selectionEnd;
         var sel = textarea.value.substring(start, end);
@@ -529,6 +570,171 @@
   document.getElementById('aiPolishModal').addEventListener('click', function(e) {
     if (e.target === this) closePolishModal();
   });
+  </script>
+
+  <!-- 图片库模态框 -->
+  <div class="modal-overlay" id="imageLibModal">
+    <div class="modal-box" style="max-width:640px;">
+      <div class="modal-header">
+        <span>图片库</span>
+        <button type="button" class="modal-close" onclick="closeImageLibrary()">&times;</button>
+      </div>
+      <div class="modal-body" style="flex-direction:column;">
+        <div class="image-lib-upload">
+          <button type="button" class="btn btn-primary" id="imageLibUploadBtn">上传图片</button>
+          <div class="hint">支持 jpg / png / gif / webp / svg / bmp，单张不超过 10MB；上传后点击图片即可插入</div>
+        </div>
+        <div id="imageLibGrid" class="image-lib-grid">
+          <div class="image-lib-loading">加载中...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-cancel" onclick="closeImageLibrary()">取消</button>
+        <button type="button" class="btn btn-primary" id="imageLibInsertBtn" disabled>插入图片</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    var libTextarea = document.getElementById('content');
+    var libGrid = document.getElementById('imageLibGrid');
+    var libInsertBtn = document.getElementById('imageLibInsertBtn');
+    var selectedUrl = null;
+
+    window.closeImageLibrary = function() {
+      document.getElementById('imageLibModal').classList.remove('active');
+    };
+
+    window.selectImageLibraryImage = function(url) {
+      selectedUrl = url;
+      libGrid.querySelectorAll('.image-lib-item').forEach(function(el) {
+        el.classList.toggle('selected', el.dataset.url === url);
+      });
+      libInsertBtn.disabled = !url;
+    };
+
+    // 打开图片库并加载列表
+    window.openImageLibrary = function() {
+      document.getElementById('imageLibModal').classList.add('active');
+      loadImageLibrary();
+    };
+
+    function loadImageLibrary() {
+      libGrid.innerHTML = '<div class="image-lib-loading">加载中...</div>';
+      selectedUrl = null;
+      libInsertBtn.disabled = true;
+      return fetch('/admin/images')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (!data.success) { throw new Error(data.message || '加载失败'); }
+          renderImageGrid(data.images || []);
+        })
+        .catch(function(err) {
+          libGrid.innerHTML = '<div class="image-lib-empty">加载失败: ' + (err.message || '网络错误') + '</div>';
+        });
+    }
+
+    function renderImageGrid(images) {
+      if (!images.length) {
+        libGrid.innerHTML = '<div class="image-lib-empty">暂无图片，请先上传</div>';
+        return;
+      }
+      libGrid.innerHTML = '';
+      images.forEach(function(img) {
+        var item = document.createElement('div');
+        item.className = 'image-lib-item';
+        item.dataset.url = img.url;
+        item.innerHTML = '<div class="mask">已选择</div>'
+          + '<img src="' + img.url + '" alt="' + (img.name || '') + '" loading="lazy" style="' + (isSvg(img.url) ? 'object-fit:contain;' : '') + '">'
+          + '<div class="name">' + (img.name || '') + '</div>';
+        item.addEventListener('click', function() {
+          selectImageLibraryImage(img.url);
+        });
+        libGrid.appendChild(item);
+      });
+    }
+
+    function isSvg(url) { return /\.svg$/i.test(url); }
+
+    libInsertBtn.addEventListener('click', function() {
+      if (!selectedUrl) return;
+      insertMarkdown(selectedUrl);
+    });
+
+    // 在光标处插入 markdown 图片
+    function insertMarkdown(url) {
+      var md = '![' + fileBaseName(url) + '](' + url + ')';
+      var start = libTextarea.selectionStart;
+      var end = libTextarea.selectionEnd;
+      libTextarea.value = libTextarea.value.substring(0, start) + md + libTextarea.value.substring(end);
+      var caret = start + md.length;
+      libTextarea.selectionStart = libTextarea.selectionEnd = caret;
+      libTextarea.focus();
+      libTextarea.dispatchEvent(new Event('input'));
+      closeImageLibrary();
+    }
+
+    function fileBaseName(url) {
+      var clean = url.split('?')[0];
+      var parts = clean.split('/');
+      return parts[parts.length - 1];
+    }
+
+    // 上传图片
+    document.getElementById('imageLibUploadBtn').addEventListener('click', function() {
+      var input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        uploadLibraryImage(file);
+      };
+      input.click();
+    });
+
+    function uploadLibraryImage(file) {
+      var btn = document.getElementById('imageLibUploadBtn');
+      var originalText = btn.textContent;
+      btn.textContent = '上传中...';
+      btn.disabled = true;
+
+      var formData = new FormData();
+      formData.append('image', file);
+
+      fetch('/admin/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data.success) {
+          // 上传成功，刷新图片列表并选中新图片
+          loadImageLibrary().then(function() {
+            var items = libGrid.querySelectorAll('.image-lib-item');
+            items.forEach(function(el) {
+              if (el.dataset.url === data.url) selectImageLibraryImage(data.url);
+            });
+          });
+        } else {
+          alert('上传失败: ' + data.message);
+        }
+      })
+      .catch(function(err) {
+        alert('上传失败: ' + (err.message || '网络错误'));
+      })
+      .finally(function() {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      });
+    }
+
+    // 点击遮罩层关闭
+    document.getElementById('imageLibModal').addEventListener('click', function(e) {
+      if (e.target === this) closeImageLibrary();
+    });
+  })();
   </script>
 </body>
 </html>

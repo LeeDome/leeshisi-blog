@@ -281,6 +281,39 @@ async function vote(commentId, ipAddress, voteType) {
   return get('SELECT * FROM comments WHERE id = ?', [commentId]);
 }
 
+// 查询仍未 AI 审核的评论（按时间顺序，limit 为每批上限，maxCount 为余量净配额）
+async function findPendingModeration(limit = 50, maxCount) {
+  await getDb();
+  const cap = maxCount != null && maxCount < limit ? maxCount : limit;
+  return all(
+    `SELECT c.*, a.title as article_title
+     FROM comments c
+     LEFT JOIN articles a ON c.article_id = a.id
+     WHERE c.ai_moderated = 0 AND c.status != 'disabled'
+     ORDER BY c.created_at ASC
+     LIMIT ?`,
+    [cap]
+  );
+}
+
+// ---- IP 拉黑 ----
+// 是否仍在拉黑期内（返回解除时间，未拉黑/已过期返回 null）
+function isIpBlocked(ip) {
+  const row = get(
+    `SELECT blocked_until FROM ip_blacklist WHERE ip = ? AND blocked_until > datetime('now','localtime')`,
+    [ip]
+  );
+  return row ? row.blocked_until : null;
+}
+
+// 拉黑 IP（hours 小时）
+function addIpBlacklist(ip, reason, hours) {
+  const h = parseInt(hours) || 21;
+  run(`INSERT INTO ip_blacklist (ip, blocked_until, reason) VALUES (?, datetime('now','localtime','+${h} hours'), ?)
+       ON CONFLICT(ip) DO UPDATE SET blocked_until = excluded.blocked_until, reason = excluded.reason, created_at = datetime('now','localtime')`,
+    [ip, reason]);
+}
+
 module.exports = {
   findByArticle,
   findChildrenForRoot,
@@ -295,5 +328,8 @@ module.exports = {
   markSpam,
   getVotedCommentIds,
   getVoteStatus,
-  vote
+  vote,
+  findPendingModeration,
+  isIpBlocked,
+  addIpBlacklist
 };

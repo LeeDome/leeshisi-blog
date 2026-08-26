@@ -1,7 +1,7 @@
 const commentModel = require('../models/comment');
 const articleModel = require('../models/article');
-const aiModel = require('../models/ai');
 const userModel = require('../models/user');
+const rateLimiter = require('../services/commentRateLimiter');
 
 function getClientIp(req) {
   return req.headers['x-forwarded-for'] && req.headers['x-forwarded-for'].split(',')[0].trim()
@@ -100,6 +100,7 @@ exports.loadMore = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { content, article_id, page_type, nickname, email, website, parent_id } = req.body;
+    const ip = getClientIp(req);
 
     // 去除 Referer 中已有的 comment_submitted 参数，避免重定向后参数无限累加
     const backUrl = (req.get('Referer') || '/').replace(/[?&]comment_submitted=[^&]*/g, '');
@@ -107,10 +108,17 @@ exports.create = async (req, res) => {
       return res.redirect(backUrl);
     }
 
+    // 评论频率限制 + IP 拉黑（防 AI token 被刷爆）
+    const sep = backUrl.includes('?') ? '&' : '?';
+    const rl = await rateLimiter.checkCommentRateLimit(ip);
+    if (!rl.allowed) {
+      return res.redirect(backUrl + sep + (rl.reason === 'blacklisted' ? 'comment_error=blacklisted' : 'comment_error=too_frequent'));
+    }
+
     // 后端限制：昵称不可与管理员昵称重合
     const author = await userModel.getAuthor();
     if (author && author.nickname && String(nickname).trim().toLowerCase() === String(author.nickname).trim().toLowerCase()) {
-      return res.redirect(backUrl + (backUrl.includes('?') ? '&' : '?') + 'comment_error=protected_nickname');
+      return res.redirect(backUrl + sep + 'comment_error=protected_nickname');
     }
 
     const comment = await commentModel.create({
@@ -127,24 +135,9 @@ exports.create = async (req, res) => {
       await articleModel.updateCommentCount(article_id);
     }
 
-    // 异步触发 AI 处理（不阻塞用户请求）：先审核，违规则禁用且不回复，不违规再判断是否回复
-    if (comment) {
-      setImmediate(async () => {
-        try {
-          const violated = await aiModel.moderateComment(comment);
-          if (violated) {
-            console.log(`[AI] 评论 #${comment.id} 违规已禁用，不回复`);
-            return;
-          }
-          await aiModel.autoReply(comment);
-        } catch (err) {
-          console.error('[AI评论处理] 失败:', err.message);
-        }
-      });
-    }
+    // 注意：AI 审核与回复由后台调度器批量处理（见 services/aiScheduler.js），此处不再异步触发
 
-    const separator = backUrl.includes('?') ? '&' : '?';
-    res.redirect(backUrl + separator + 'comment_submitted=1');
+    res.redirect(backUrl + sep + 'comment_submitted=1');
   } catch (err) {
     const backUrl = (req.get('Referer') || '/').replace(/[?&]comment_submitted=[^&]*/g, '');
     const separator = backUrl.includes('?') ? '&' : '?';

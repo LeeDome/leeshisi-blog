@@ -87,6 +87,14 @@
   if (typeof showToast === 'function') showToast('该昵称与博主昵称重合，请更换昵称');
   <% } %>
 
+  // 评论频率限制 / IP 拉黑提示
+  <% if (locals.comment_error === 'too_frequent') { %>
+  if (typeof showToast === 'function') showToast('发言频繁，请稍后再试');
+  <% } %>
+  <% if (locals.comment_error === 'blacklisted') { %>
+  if (typeof showToast === 'function') showToast('发言过于频繁，已被暂时限制，请稍后重试');
+  <% } %>
+
   // 校验昵称不与管理员昵称重合
   function guardNickname(input) {
     var val = (input.value || '').trim();

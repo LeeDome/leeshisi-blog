@@ -57,6 +57,18 @@ const update = async (data) => {
     fields.push('icp_record = ?');
     values.push(data.icp_record);
   }
+  if (data.site_url !== undefined) {
+    fields.push('site_url = ?');
+    values.push(data.site_url);
+  }
+  if (data.site_description !== undefined) {
+    fields.push('site_description = ?');
+    values.push(data.site_description);
+  }
+  if (data.site_keywords !== undefined) {
+    fields.push('site_keywords = ?');
+    values.push(data.site_keywords);
+  }
   if (fields.length === 0) {
     return get('SELECT * FROM site_settings LIMIT 1');
   }

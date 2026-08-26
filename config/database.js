@@ -190,6 +190,9 @@ function initSchema() {
     qiniu_secret_key VARCHAR(255) DEFAULT '',
     qiniu_bucket VARCHAR(100) DEFAULT '',
     qiniu_domain VARCHAR(255) DEFAULT '',
+    site_url VARCHAR(255) DEFAULT '',
+    site_description TEXT DEFAULT '',
+    site_keywords TEXT DEFAULT '',
     created_at DATETIME DEFAULT (datetime('now','localtime')),
     updated_at DATETIME DEFAULT (datetime('now','localtime'))
   )`);
@@ -201,6 +204,10 @@ function initSchema() {
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_bucket VARCHAR(100) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN qiniu_domain VARCHAR(255) DEFAULT \'\''); } catch(_) {}
   try { db.run('ALTER TABLE site_settings ADD COLUMN icp_record VARCHAR(255) DEFAULT \'\''); } catch(_) {}
+  // SEO 字段兼容
+  try { db.run('ALTER TABLE site_settings ADD COLUMN site_url VARCHAR(255) DEFAULT \'\''); } catch(_) {}
+  try { db.run('ALTER TABLE site_settings ADD COLUMN site_description TEXT DEFAULT \'\''); } catch(_) {}
+  try { db.run('ALTER TABLE site_settings ADD COLUMN site_keywords TEXT DEFAULT \'\''); } catch(_) {}
   // AI 评论审核字段兼容
   try { db.run('ALTER TABLE comments ADD COLUMN ai_moderated INTEGER DEFAULT 0'); } catch(_) {}
 
@@ -255,6 +262,32 @@ function initSchema() {
   try { db.run('ALTER TABLE ai_providers ADD COLUMN input_tokens INTEGER'); } catch(_) {}
   try { db.run('ALTER TABLE ai_providers ADD COLUMN output_tokens INTEGER'); } catch(_) {}
   try { db.run('ALTER TABLE ai_providers ADD COLUMN thinking_mode INTEGER DEFAULT 0'); } catch(_) {}
+
+  db.run(`CREATE TABLE IF NOT EXISTS ai_function_map (
+    func VARCHAR(20) PRIMARY KEY,
+    provider_id INTEGER,
+    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS mcp_settings (
+    name VARCHAR(50) PRIMARY KEY,
+    api_key TEXT,
+    enabled INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS ai_config (
+    k VARCHAR(50) PRIMARY KEY,
+    v TEXT,
+    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS ip_blacklist (
+    ip VARCHAR(64) PRIMARY KEY,
+    blocked_until DATETIME,
+    reason VARCHAR(255),
+    created_at DATETIME DEFAULT (datetime('now','localtime'))
+  )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS ai_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

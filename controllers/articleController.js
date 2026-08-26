@@ -54,6 +54,7 @@ exports.listByCategory = async (req, res) => {
 
     res.render('index', {
       title: category ? category.name : '分类',
+      description: category ? category.description : '',
       articles: result.articles,
       page: result.page,
       totalPages: result.totalPages,
@@ -62,6 +63,7 @@ exports.listByCategory = async (req, res) => {
   } catch (err) {
     res.render('index', {
       title: '分类',
+      description: '',
       articles: [],
       page: 1,
       totalPages: 0,
@@ -148,6 +150,10 @@ exports.detail = async (req, res, next) => {
 
     res.render('article-detail', {
       title: article.title,
+      description: article.excerpt || article.title,
+      keywords: tags.map(function(t) { return t.name; }).join(','),
+      ogType: 'article',
+      ogImage: article.cover_image || '',
       article,
       tags,
       comments: commentResult.comments,
@@ -208,7 +214,7 @@ exports.rate = async (req, res) => {
       [article_id]
     );
 
-    const ratingScore = ratingResult.total_score / ratingResult.count;
+    const ratingScore = Math.round((ratingResult.total_score / ratingResult.count) * 100) / 100;
     const ratingCount = ratingResult.count;
 
     run(

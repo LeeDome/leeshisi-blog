@@ -5,10 +5,13 @@ const articleController = require('../controllers/articleController');
 const commentController = require('../controllers/commentController');
 const pageController = require('../controllers/pageController');
 const toolController = require('../controllers/toolController');
+const seoController = require('../controllers/seoController');
 
 router.use(loadCommonData);
 
 router.get('/', articleController.index);
+router.get('/sitemap.xml', seoController.sitemap);
+router.get('/robots.txt', seoController.robots);
 router.get('/category/:slug', articleController.listByCategory);
 router.get('/tag/:id', articleController.listByTag);
 router.get('/article/:id', articleController.detail);

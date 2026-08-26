@@ -143,6 +143,80 @@
     .form-row { display: flex; gap: 14px; margin-bottom: 0; }
     .form-row .form-group { flex: 1; min-width: 0; }
     .form-row-3 .form-group { flex: 1; min-width: 0; }
+    /* 多模态复选框：与同行输入框对齐 */
+    .multimodal-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 0 12px;
+      box-sizing: border-box;
+      border: 1px solid #d9e2ec;
+      border-radius: 8px;
+      background: #fbfcfe;
+      font-size: 14px;
+      font-weight: normal;
+      color: #334155;
+      cursor: pointer;
+      margin-bottom: 0;
+      transition: border-color .18s, box-shadow .18s;
+    }
+    .multimodal-check:hover { border-color: #4096ff; background: #fff; }
+    .multimodal-check:has(input:checked) {
+      border-color: #1677ff;
+      background: #f0f7ff;
+      box-shadow: inset 0 0 0 1px #1677ff;
+    }
+    .multimodal-check input {
+      width: 16px; height: 16px;
+      margin: 0;
+      accent-color: #1677ff;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    /* ===== 供应商配置模态框 ===== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 36px 16px;
+    }
+    .modal-overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+    .modal-overlay .provider-form-card { margin-bottom: 0; width: 100%; max-width: 720px; }
+    .pf-close {
+      margin-left: auto;
+      width: 32px; height: 32px;
+      flex-shrink: 0;
+      border: none; border-radius: 8px;
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 18px; line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .18s ease;
+    }
+    .pf-close:hover { background: #e2e8f0; color: #334155; }
+    /* 添加供应商按钮 */
+    .btn-add-provider {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      background: linear-gradient(135deg, #4096ff, #1677ff);
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
+      transition: all .2s ease;
+      white-space: nowrap;
+    }
+    .btn-add-provider:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(22, 119, 255, 0.32); }
     .form-group input[type="number"] {
       width: 100%;
       padding: 9px 12px;
@@ -366,14 +440,20 @@
           </tr>
         </table>
         <div style="margin-top:12px;padding:10px 14px;background:#fff;border-radius:6px;border:1px solid #e8e8e8;font-size:13px;color:#555;line-height:1.6;">
-          <strong style="color:#d32f2f;">提示：</strong>点击下方「添加 AI 供应商」按钮，选择预置模板（或自定义），填写 API Key 和模型 ID，勾选需要的功能，保存即可开始使用。
+          <strong style="color:#d32f2f;">提示：</strong>点击「已配置的 AI 供应商」右侧的「添加 AI 供应商」按钮，选择预置模板（或自定义），填写 API Key 和模型 ID，勾选需要的功能，保存即可开始使用。
         </div>
       </div>
     </div>
 
     <!-- 已有配置列表 -->
     <div class="panel">
-      <h3>已配置的 AI 供应商</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="margin:0;">已配置的 AI 供应商</h3>
+        <button type="button" class="btn-add-provider" onclick="openProviderModal(true)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          添加 AI 供应商
+        </button>
+      </div>
       <% if (providers && providers.length > 0) { %>
         <% providers.forEach(function(p) { %>
           <div class="provider-card">
@@ -409,13 +489,168 @@
       <% } else { %>
         <div class="empty-state">
           <p>暂无 AI 配置</p>
-          <p style="font-size:13px;color:#aaa;">点击下方添加一个 AI 供应商开始使用</p>
+          <p style="font-size:13px;color:#aaa;">点击右上角「添加 AI 供应商」按钮开始使用</p>
         </div>
       <% } %>
     </div>
 
-    <!-- 添加/编辑配置表单 -->
-    <div class="provider-form-card" id="providerForm">
+    <!-- AI 评论防护（配额 / 批量 / 限流） -->
+    <div class="panel" style="margin-top:24px;">
+      <h3>评论 AI 防护</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px;">防止评论被无限刷、AI token 被刷爆。审核与回复均已纳入配额与批量处理，未审核评论按「批量间隔」合并为一次 AI 调用统一审核。</p>
+      <p style="font-size:13px;color:#666;margin:-8px 0 14px;line-height:1.7;">处理流程：评论入库后先进入「批量审核」——只有<strong>通过审核</strong>（不违规）的评论，才会在<strong>本轮审核完成后</strong>再逐个触发 AI 回复；未审核、被判定违规的评论一律不会回复。因此 AI 回复会有最多一个「批量审核间隔」的延迟。若某轮审核未通过，则不会回复该评论。</p>
+      <form method="POST" action="/admin/ai/config">
+        <table class="table">
+          <thead>
+            <tr><th>配置项</th><th>值</th><th>今日用量</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>每日最大审核条数</td>
+              <td><input type="number" min="0" name="daily_moderate_limit" value="<%= aiConfig.daily_moderate_limit %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td><%= moderateToday %> / <%= aiConfig.daily_moderate_limit === '0' ? '不限' : aiConfig.daily_moderate_limit %></td>
+              <td>0 = 不限制；超出后当天不再 AI 审核</td>
+            </tr>
+            <tr>
+              <td>每日最大 AI 回复条数</td>
+              <td><input type="number" min="0" name="daily_reply_limit" value="<%= aiConfig.daily_reply_limit %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td><%= replyToday %> / <%= aiConfig.daily_reply_limit === '0' ? '不限' : aiConfig.daily_reply_limit %></td>
+              <td>0 = 不限制；超出后当天不再自动回复</td>
+            </tr>
+            <tr>
+              <td>批量审核间隔（分钟）</td>
+              <td><input type="number" min="1" name="moderate_batch_interval_min" value="<%= aiConfig.moderate_batch_interval_min %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td>—</td>
+              <td>每 N 分钟将未审核评论合并为一次调用审核</td>
+            </tr>
+            <tr>
+              <td>每分钟单 IP 最大评论数</td>
+              <td><input type="number" min="1" name="rate_limit_per_minute" value="<%= aiConfig.rate_limit_per_minute %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td>—</td>
+              <td>超过则提示「发言频繁，请稍后」</td>
+            </tr>
+            <tr>
+              <td>频繁触发拉黑阈值（次）</td>
+              <td><input type="number" min="1" name="rate_limit_blacklist_threshold" value="<%= aiConfig.rate_limit_blacklist_threshold %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td>—</td>
+              <td>连续触发限流达到该次数即拉黑该 IP</td>
+            </tr>
+            <tr>
+              <td>拉黑时长（小时）</td>
+              <td><input type="number" min="1" name="rate_limit_blacklist_hours" value="<%= aiConfig.rate_limit_blacklist_hours %>" style="width:90px;padding:5px 8px;border:1px solid #d9e2ec;border-radius:6px;" /></td>
+              <td>—</td>
+              <td>被拉黑 IP 在此时长内无法评论</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:12px;">
+          <button type="submit" class="btn btn-primary">保存防护配置</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- MCP（联网工具）配置 -->
+    <div class="panel" style="margin-top:24px;">
+      <h3>MCP 配置</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px;">为 Agent 提供联网工具。当前支持 <strong>Tavily</strong> 网络搜索 —— AI 在需要准确、最新信息时会自动联网检索后再回答，无需在回复中说明。</p>
+
+      <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:14px;border:1px solid #d9e2ec;border-radius:10px;">
+        <div style="flex:1;min-width:240px;">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:600;">
+            Tavily
+            <span class="function-tag vision">网络搜索</span>
+            <% if (mcpTavily && mcpTavily.enabled) { %>
+              <span style="font-size:12px;color:#00b578;">● 已启用<%= mcpTavily.updated_at ? '（' + mcpTavily.updated_at + '）' : '' %></span>
+            <% } else { %>
+              <span style="font-size:12px;color:#bbb;">● 未启用</span>
+            <% } %>
+          </div>
+          <p style="font-size:12px;color:#999;margin:6px 0 0;">
+            文档：<a href="https://docs.tavily.com/documentation/api-reference/endpoint/search" target="_blank" rel="noopener" style="color:#1677ff;">docs.tavily.com</a>。
+            填写 API Key 保存时，系统会先测试连通性，测试通过才生效。
+          </p>
+        </div>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+          <form method="POST" action="/admin/ai/mcp" style="display:flex;gap:8px;">
+            <input type="password" name="api_key" placeholder="<%= mcpTavily && mcpTavily.enabled ? '已启用，填新 Key 可更新' : '粘贴 Tavily API Key' %>" style="padding:7px 10px;border:1px solid #d9e2ec;border-radius:8px;font-size:13px;width:240px;" required />
+            <button type="submit" class="btn btn-primary btn-sm">启用更新</button>
+          </form>
+          <% if (mcpTavily && mcpTavily.enabled) { %>
+            <form method="POST" action="/admin/ai/mcp/disable" onsubmit="return confirm('确定禁用 Tavily 网络搜索？')">
+              <button type="submit" class="btn btn-sm btn-danger">禁用</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能 → 供应商分配 -->
+    <div class="panel" style="margin-top:24px;">
+      <h3>功能分配</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px;">为每个功能指定使用哪个 AI 供应商。若某功能留空为「自动」，将回退到在启用该功能的配置中选取最新添加的一个。</p>
+      <form method="POST" action="/admin/ai/functions">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width:120px;">功能</th>
+              <th style="width:160px;">说明</th>
+              <th>使用的 AI 供应商</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% [
+              { key: 'reply', label: '评论回复', desc: 'AI 自动回复用户评论' },
+              { key: 'moderate', label: '评论审核', desc: '自动检测广告、辱骂等并禁用' },
+              { key: 'polish', label: '文章润色', desc: '编辑文章时辅助写作' }
+            ].forEach(function(f) { %>
+            <tr>
+              <td><span class="function-tag <%= f.key %>"><%= f.label %></span></td>
+              <td style="font-size:12px;color:#999;"><%= f.desc %></td>
+              <td>
+                <select name="<%= f.key %>" style="padding:7px 10px;border:1px solid #d9e2ec;border-radius:8px;font-size:13px;width:100%;max-width:380px;">
+                  <option value="">— 自动（最新优先）—</option>
+                  <% (providers || []).forEach(function(p) { %>
+                    <option value="<%= p.id %>" <%= String(functionMap[f.key]) === String(p.id) ? 'selected' : '' %>>
+                      <%= p.name %>（<%= p.model_id %>）
+                    </option>
+                  <% }); %>
+                </select>
+                <% if (functionMap[f.key]) { %>
+                  <span style="font-size:12px;color:#1677ff;margin-left:8px;">已指定</span>
+                <% } %>
+              </td>
+            </tr>
+            <% }); %>
+            <tr>
+              <td><span class="function-tag vision">视觉辅助</span></td>
+              <td style="font-size:12px;color:#999;">识别文章图片内容（须为已开启多模态的供应商）</td>
+              <td>
+                <select name="vision" style="padding:7px 10px;border:1px solid #d9e2ec;border-radius:8px;font-size:13px;width:100%;max-width:380px;">
+                  <option value="">— 暂无 —</option>
+                  <% (providers || []).filter(function(p) { return p.is_multimodal; }).forEach(function(p) { %>
+                    <option value="<%= p.id %>" <%= String(functionMap.vision) === String(p.id) ? 'selected' : '' %>>
+                      <%= p.name %>（<%= p.model_id %>）
+                    </option>
+                  <% }); %>
+                </select>
+                <% if (functionMap.vision) { %>
+                  <span style="font-size:12px;color:#1677ff;margin-left:8px;">已指定</span>
+                <% } else { %>
+                  <span style="font-size:12px;color:#bbb;margin-left:8px;">未配置</span>
+                <% } %>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:14px;">
+          <button type="submit" class="btn btn-primary btn-sm">保存功能分配</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 添加/编辑配置表单（模态框） -->
+    <div class="modal-overlay" id="providerModal">
+      <div class="provider-form-card" id="providerForm">
       <div class="pf-accent"></div>
       <div class="pf-head">
         <div class="pf-icon">
@@ -429,6 +664,7 @@
           <h3 id="formTitle">添加 AI 供应商</h3>
           <p>填入 API 信息，保存时将向模型发送「你好」测试连通性</p>
         </div>
+        <button type="button" class="pf-close" onclick="closeProviderModal(true)" title="关闭">&times;</button>
       </div>
       <form method="POST" action="/admin/ai" id="providerFormInner">
         <input type="hidden" id="edit_id" name="id" value="">
@@ -511,6 +747,14 @@
               </select>
               <span class="help-text">适用于推理模型，开启后传入 Thinking 参数</span>
             </div>
+            <div class="form-group">
+              <label for="is_multimodal">模型能力</label>
+              <label class="multimodal-check" for="is_multimodal">
+                <input type="checkbox" name="is_multimodal" value="1" id="is_multimodal">
+                <span>多模态模型</span>
+              </label>
+              <span class="help-text">支持图像 URL 输入的模型请勾选</span>
+            </div>
           </div>
 
           <div class="pf-group-title"><span class="pf-num">4</span>功能分配</div>
@@ -536,22 +780,16 @@
                 <span class="fc-desc" style="display:block;">编辑文章时 AI 优化、续写、摘要</span>
               </span>
             </label>
-            <label class="function-card">
-              <input type="checkbox" name="is_multimodal" value="1">
-              <span>
-                <span class="fc-title">多模态模型</span>
-                <span class="fc-desc" style="display:block;">支持图片理解（图像 URL 输入）</span>
-              </span>
-            </label>
           </div>
 
         </div>
         <div class="pf-footer">
           <button type="submit" class="btn-save" id="saveBtn">保存配置</button>
-          <button type="button" class="btn btn-cancel" id="cancelEdit" style="display:none;" onclick="resetForm()">取消编辑</button>
+          <button type="button" class="btn btn-cancel" id="cancelEdit" style="display:none;" onclick="closeProviderModal(true)">取消编辑</button>
           <span class="pf-footer-hint">保存时将向模型发送测试消息，请稍候</span>
         </div>
       </form>
+      </div>
     </div>
 
     <!-- AI 操作记录 -->
@@ -752,7 +990,26 @@
     setTimeout(hideModelDropdown, 120);
   });
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') hideModelDropdown();
+    if (e.key === 'Escape') {
+      hideModelDropdown();
+      closeProviderModal(true);
+    }
+  });
+
+  // ===== 供应商配置模态框 =====
+  function openProviderModal(isAdd) {
+    if (isAdd) resetForm();
+    document.getElementById('providerModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeProviderModal(reset) {
+    document.getElementById('providerModal').classList.remove('show');
+    document.body.style.overflow = '';
+    if (reset) resetForm();
+  }
+  // 点击遮罩空白处关闭
+  document.getElementById('providerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeProviderModal(true);
   });
 
   ['api_url', 'api_key'].forEach(function(id) {
@@ -812,9 +1069,9 @@
 
     document.getElementById('cancelEdit').style.display = 'inline-block';
 
-    // 编辑时依据已填地址/密钥也尝试加载模型列表
+    // 编辑时依据已填地址/密钥也尝试加载模型列表，并以模态框形式打开
     setTimeout(fetchModels, 200);
-    window.scrollTo({ top: document.getElementById('providerForm').offsetTop - 20, behavior: 'smooth' });
+    openProviderModal(false);
   }
 
   function resetForm() {

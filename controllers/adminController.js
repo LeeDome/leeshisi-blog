@@ -821,7 +821,7 @@ exports.settings = async (req, res) => {
 
 exports.settingsUpdate = async (req, res) => {
   try {
-    const { site_name, site_logo, footer_links, copyright, theme, start_time, upload_type, qiniu_access_key, qiniu_secret_key, qiniu_bucket, qiniu_domain, icp_record } = req.body;
+    const { site_name, site_logo, footer_links, copyright, theme, start_time, upload_type, qiniu_access_key, qiniu_secret_key, qiniu_bucket, qiniu_domain, icp_record, site_url, site_description, site_keywords } = req.body;
     await settingModel.update({
       site_name,
       site_logo,
@@ -834,7 +834,10 @@ exports.settingsUpdate = async (req, res) => {
       qiniu_secret_key,
       qiniu_bucket,
       qiniu_domain,
-      icp_record
+      icp_record,
+      site_url,
+      site_description,
+      site_keywords
     });
     req.session.messages = [{ type: 'success', text: '设置已保存' }];
     res.redirect('/admin/settings');

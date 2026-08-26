@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(function(data) {
         if (data.success) {
           var ratingScore = document.querySelector('.rating-score');
-          if (ratingScore) ratingScore.textContent = data.rating_score.toFixed(1);
+          if (ratingScore) ratingScore.textContent = data.rating_score.toFixed(2);
           var ratingCount = document.querySelector('.rating-count');
           if (ratingCount) ratingCount.textContent = '(' + data.rating_count + '人评分)';
           stars.forEach(function(s, i) {

@@ -4,6 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= typeof title !== 'undefined' ? title : '页面' %> - <%= typeof siteName !== 'undefined' ? siteName : '李拾肆博客' %></title>
+  <meta name="description" content="<%= typeof description !== 'undefined' && description ? description : siteDescription %>">
+  <% if (typeof keywords !== 'undefined' && keywords) { %>
+  <meta name="keywords" content="<%= keywords %>">
+  <% } %>
+  <% if (typeof noindex !== 'undefined' && noindex) { %>
+  <meta name="robots" content="noindex, follow">
+  <% } %>
+  <link rel="canonical" href="<%= canonical %>">
+  <meta property="og:site_name" content="<%= siteName %>">
+  <meta property="og:title" content="<%= title %> - <%= siteName %>">
+  <meta property="og:description" content="<%= typeof description !== 'undefined' && description ? description : siteDescription %>">
+  <meta property="og:type" content="<%= typeof ogType !== 'undefined' ? ogType : 'website' %>">
+  <meta property="og:url" content="<%= canonical %>">
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+  <meta property="og:image" content="<%= typeof absoluteUrl === 'function' ? absoluteUrl(ogImage) : ogImage %>">
+  <% } %>
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="<%= title %> - <%= siteName %>">
+  <meta name="twitter:description" content="<%= typeof description !== 'undefined' && description ? description : siteDescription %>">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"<%= siteName %>","url":"<%= typeof baseUrl !== 'undefined' ? baseUrl : '' %>"}
+  </script>
   <link rel="icon" href="<%= typeof siteLogo !== 'undefined' && siteLogo ? siteLogo : '/favicon.svg' %>">
   <link rel="stylesheet" href="/css/style.css">
 </head>

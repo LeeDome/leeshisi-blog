@@ -75,6 +75,24 @@
         </div>
 
         <hr class="section-divider">
+        <h3>SEO 设置</h3>
+
+        <div class="form-group">
+          <label for="site_url">站点域名</label>
+          <input type="text" id="site_url" name="site_url" value="<%= settings && settings.site_url ? settings.site_url : '' %>" placeholder="例如：https://blog.example.com（不带末尾斜杠）">
+          <span class="help-text">用于生成 canonical、Open Graph、robots.txt、sitemap.xml 中的绝对地址。留空则自动按当前访问域名生成</span>
+        </div>
+        <div class="form-group">
+          <label for="site_description">站点描述</label>
+          <textarea id="site_description" name="site_description" rows="3" placeholder="网站整体描述，用于搜索引擎 meta description 与分享卡片"><%= settings && settings.site_description ? settings.site_description : '' %></textarea>
+          <span class="help-text">建议 80-160 字，概括网站内容与定位</span>
+        </div>
+        <div class="form-group">
+          <label for="site_keywords">站点关键词</label>
+          <input type="text" id="site_keywords" name="site_keywords" value="<%= settings && settings.site_keywords ? settings.site_keywords : '' %>" placeholder="多个关键词用英文逗号分隔">
+        </div>
+
+        <hr class="section-divider">
         <h3>图片上传配置</h3>
 
         <div class="form-group">

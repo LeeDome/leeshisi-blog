@@ -207,6 +207,8 @@ exports.galleryDetail = async (req, res) => {
 
     res.render('gallery-detail', {
       title: gallery ? gallery.title : '图册详情',
+      description: gallery && gallery.description ? gallery.description : '',
+      ogImage: gallery && gallery.cover_image ? gallery.cover_image : '',
       gallery
     });
   } catch (err) {

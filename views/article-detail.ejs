@@ -1,4 +1,17 @@
 <% if (locals.article) { %>
+<script type="application/ld+json">
+<%- JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": article.title,
+  "description": article.excerpt || '',
+  "image": (typeof absoluteUrl === 'function') ? absoluteUrl(article.cover_image || '') : (article.cover_image || ''),
+  "datePublished": article.created_at,
+  "dateModified": article.updated_at || article.created_at,
+  "author": { "@type": "Person", "name": (article.author && article.author.nickname) || '' },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": (typeof canonical !== 'undefined' ? canonical : '') }
+}).replace(/</g, '\\u003c') %>
+</script>
 <article class="article-detail">
   <div class="back-nav"><a href="javascript:history.back()" class="back-link">&laquo; 返回上一页</a></div>
   <header class="article-header">
@@ -12,10 +25,11 @@
         <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
         <%= article.view_count || 0 %>
       </span>
-      <span class="meta-item meta-like-btn" data-article-id="<%= article.id %>" style="cursor:pointer;">
+      <button type="button" class="meta-like-btn" data-article-id="<%= article.id %>" aria-label="点赞">
         <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span class="like-label">点赞</span>
         <span class="like-count"><%= article.like_count || 0 %></span>
-      </span>
+      </button>
       <span class="meta-item">
         <svg class="meta-icon" viewBox="0 0 24 24" width="14" height="14"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
         <%= article.comment_count || 0 %>
@@ -36,7 +50,7 @@
 
   <div class="rating-section">
     <span class="rating-label">评分：</span>
-    <span class="rating-score"><%= article.rating_score || 0 %></span>
+    <span class="rating-score"><%= Math.round((article.rating_score || 0) * 100) / 100 %></span>
     <div class="rating-stars" data-article-id="<%= article.id %>">
       <% for (var i = 1; i <= 5; i++) { %>
         <button class="rating-star <%= i <= Math.round(article.rating_score || 0) ? 'active' : '' %>" data-value="<%= i %>" aria-label="<%= i %>星">&#9733;</button>
@@ -157,7 +171,7 @@
               s.classList.toggle('active', idx < value);
             });
             var scoreEl = document.querySelector('.rating-score');
-            if (scoreEl) scoreEl.textContent = Math.round(data.rating_score * 10) / 10;
+            if (scoreEl) scoreEl.textContent = Math.round(data.rating_score * 100) / 100;
             showToast('评分成功');
           } else {
             showToast(data.message || '评分失败');
@@ -183,6 +197,7 @@
           if (data.success) {
             var countSpan = likeBtn.querySelector('.like-count');
             if (countSpan) countSpan.textContent = data.like_count;
+            likeBtn.classList.add('active');
             showToast('点赞成功');
           } else {
             showToast(data.message || '点赞失败');
@@ -222,6 +237,14 @@
   // 后端返回的昵称冲突错误提示
   <% if (locals.comment_error === 'protected_nickname') { %>
   if (typeof showToast === 'function') showToast('该昵称与博主昵称重合，请更换昵称');
+  <% } %>
+
+  // 评论频率限制 / IP 拉黑提示
+  <% if (locals.comment_error === 'too_frequent') { %>
+  if (typeof showToast === 'function') showToast('发言频繁，请稍后再试');
+  <% } %>
+  <% if (locals.comment_error === 'blacklisted') { %>
+  if (typeof showToast === 'function') showToast('发言过于频繁，已被暂时限制，请稍后重试');
   <% } %>
 
   // 校验昵称不与管理员昵称重合
@@ -369,6 +392,241 @@
     });
   }
 
+  // ===== Mermaid 图表增强：点击放大查看 + 下载为图片 =====
+  function svgToPngDataUrl(svg, scale, cb) {
+    var vb = svg.getAttribute('viewBox');
+    var w = 0, h = 0;
+    if (vb) {
+      var parts = vb.split(/\s+/).map(Number);
+      if (parts.length === 4) { w = parts[2]; h = parts[3]; }
+    }
+    if (!w || !h) {
+      var rect = svg.getBoundingClientRect();
+      w = rect.width; h = rect.height;
+    }
+    var clone = svg.cloneNode(true);
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    var xml = new XMLSerializer().serializeToString(clone);
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      cb(canvas.toDataURL('image/png'));
+    };
+    img.onerror = function() { cb(null); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+  }
+
+  // 转义正则特殊字符
+  function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // 克隆 mermaid SVG 并重写内部 id：
+  // mermaid 内嵌 <style> 以 svg 根 id 作为作用域（如 #mermaid-xxx .nodeLabel），
+  // 直接克隆（或去掉 id）会导致作用域 CSS 失效、节点/文字变黑。
+  function uniqueCloneSvg(svg) {
+    var clone = svg.cloneNode(true);
+    var prefix = 'mv-' + Date.now() + '-' + Math.floor(Math.random() * 1e5) + '-';
+    var idMap = {};
+    clone.querySelectorAll('[id]').forEach(function(el) {
+      var oldId = el.getAttribute('id');
+      if (!idMap[oldId]) {
+        idMap[oldId] = prefix + oldId;
+      }
+      el.setAttribute('id', idMap[oldId]);
+    });
+    var ids = Object.keys(idMap);
+    if (ids.length === 0) return clone;
+
+    // 更新属性中的 url(#...) 引用（marker、clip-path 等）
+    clone.querySelectorAll('*').forEach(function(el) {
+      Array.prototype.forEach.call(el.attributes, function(attr) {
+        if (attr.value && attr.value.indexOf('url(#') !== -1) {
+          var v = attr.value;
+          ids.forEach(function(oid) {
+            v = v.replace(new RegExp('url\\(#' + escapeRegExp(oid) + '\\)', 'g'), 'url(#' + idMap[oid] + ')');
+          });
+          el.setAttribute(attr.name, v);
+        }
+      });
+    });
+    // 更新 href="#..." 引用
+    clone.querySelectorAll('[href^="#"]').forEach(function(el) {
+      var h = el.getAttribute('href').slice(1);
+      if (idMap[h]) el.setAttribute('href', '#' + idMap[h]);
+    });
+    // 更新内嵌 <style> 中的作用域选择器
+    clone.querySelectorAll('style').forEach(function(st) {
+      var text = st.textContent;
+      ids.forEach(function(oid) {
+        text = text.replace(new RegExp('#' + escapeRegExp(oid) + '([^\\w-]|$)', 'g'), '#' + idMap[oid] + '$1');
+      });
+      st.textContent = text;
+    });
+    return clone;
+  }
+
+  function downloadMermaidSvg(svg) {
+    showToast('正在生成图片…');
+    svgToPngDataUrl(svg, 2, function(dataUrl) {
+      if (!dataUrl) { showToast('图片生成失败'); return; }
+      var a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = 'chart-' + Date.now() + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('图片已下载');
+    });
+  }
+
+  function enhanceMermaidChart(div) {
+    var svg = div.querySelector('svg');
+    if (!svg || div.dataset.enhanced) return;
+    div.dataset.enhanced = '1';
+    div.classList.add('mermaid-clickable');
+    div.title = '点击放大查看';
+    div.addEventListener('click', function() {
+      var current = div.querySelector('svg');
+      if (current) openMermaidViewer(current);
+    });
+  }
+
+  function openMermaidViewer(svg) {
+    var old = document.getElementById('mermaidViewer');
+    if (old) old.parentNode.removeChild(old);
+
+    var vb = svg.getAttribute('viewBox');
+    var w = 0, h = 0;
+    if (vb) {
+      var p = vb.split(/\s+/).map(Number);
+      if (p.length === 4) { w = p[2]; h = p[3]; }
+    }
+    if (!w || !h) {
+      var r = svg.getBoundingClientRect();
+      w = r.width; h = r.height;
+    }
+
+    var viewer = document.createElement('div');
+    viewer.id = 'mermaidViewer';
+    viewer.className = 'mermaid-viewer';
+
+    // 工具栏
+    var toolbar = document.createElement('div');
+    toolbar.className = 'mermaid-viewer-toolbar';
+    var title = document.createElement('span');
+    title.className = 'mermaid-viewer-title';
+    title.textContent = '图表预览（滚轮缩放 / 拖拽移动 / Esc 关闭）';
+    toolbar.appendChild(title);
+
+    function addBtn(text, handler) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mermaid-viewer-btn';
+      b.textContent = text;
+      b.addEventListener('click', handler);
+      toolbar.appendChild(b);
+      return b;
+    }
+    addBtn('下载图片', function() { downloadMermaidSvg(svg); });
+    addBtn('放大', function() { zoomBy(1.25); });
+    addBtn('缩小', function() { zoomBy(1 / 1.25); });
+    addBtn('重置', reset);
+    addBtn('关闭', close);
+    viewer.appendChild(toolbar);
+
+    // 舞台
+    var stage = document.createElement('div');
+    stage.className = 'mermaid-viewer-stage';
+    var inner = document.createElement('div');
+    inner.className = 'mermaid-viewer-inner';
+    var clone = uniqueCloneSvg(svg);
+    clone.setAttribute('width', w);
+    clone.setAttribute('height', h);
+    inner.appendChild(clone);
+    stage.appendChild(inner);
+    viewer.appendChild(stage);
+    document.body.appendChild(viewer);
+
+    var scale = 1, tx = 0, ty = 0, initScale = 1;
+    function apply() {
+      inner.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+    }
+    function fit() {
+      var sw = stage.clientWidth - 80, sh = stage.clientHeight - 80;
+      if (sw <= 0 || sh <= 0) return;
+      initScale = Math.min(sw / w, sh / h, 2);
+      scale = initScale; tx = 0; ty = 0;
+      apply();
+    }
+    function reset() { scale = initScale; tx = 0; ty = 0; apply(); }
+    function zoomBy(factor) {
+      scale = Math.min(20, Math.max(0.05, scale * factor));
+      apply();
+    }
+    function zoomAt(cx, cy, factor) {
+      var ns = Math.min(20, Math.max(0.05, scale * factor));
+      var px = (cx - tx) / scale, py = (cy - ty) / scale;
+      tx = cx - px * ns;
+      ty = cy - py * ns;
+      scale = ns;
+      apply();
+    }
+
+    stage.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      var rect = stage.getBoundingClientRect();
+      zoomAt(e.clientX - rect.left - rect.width / 2, e.clientY - rect.top - rect.height / 2,
+        e.deltaY < 0 ? 1.15 : 1 / 1.15);
+    }, { passive: false });
+
+    // 拖拽移动
+    var dragging = false, lastX = 0, lastY = 0;
+    stage.addEventListener('pointerdown', function(e) {
+      if (e.button !== 0) return;
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      stage.classList.add('dragging');
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage.addEventListener('pointermove', function(e) {
+      if (!dragging) return;
+      tx += e.clientX - lastX;
+      ty += e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      apply();
+    });
+    stage.addEventListener('pointerup', function() {
+      dragging = false;
+      stage.classList.remove('dragging');
+    });
+    stage.addEventListener('pointercancel', function() {
+      dragging = false;
+      stage.classList.remove('dragging');
+    });
+
+    function close() {
+      if (viewer.parentNode) viewer.parentNode.removeChild(viewer);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
+
+    requestAnimationFrame(fit);
+    window.addEventListener('resize', function onResize() {
+      if (!viewer.parentNode) { window.removeEventListener('resize', onResize); return; }
+      fit();
+    });
+  }
+
   function initMermaidIn(containers) {
     if (!containers || containers.length === 0) return;
     var mermaidNodes = [];
@@ -441,6 +699,7 @@
                   svg.setAttribute('viewBox', parts.join(' '));
                 }
               }
+              enhanceMermaidChart(div);
             }
           });
         }, 100);

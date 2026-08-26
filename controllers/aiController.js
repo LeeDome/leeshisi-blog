@@ -1,9 +1,15 @@
 const aiModel = require('../models/ai');
+const webSearchTool = require('../tools/web-search');
 
 // AI 配置管理页面
 exports.settingsPage = async (req, res) => {
   try {
     const providers = await aiModel.findAll();
+    const functionMap = await aiModel.getFunctionMap();
+    const mcpTavily = await aiModel.isMcpConfigured('tavily');
+    const aiConfig = await aiModel.getAllAiConfig();
+    const moderateToday = await aiModel.getDailyCount('moderate');
+    const replyToday = await aiModel.getDailyCount('reply');
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const type = req.query.type || 'all';
     const { rows: logs, total } = await aiModel.getLogs({ page, limit: 20, type });
@@ -13,6 +19,11 @@ exports.settingsPage = async (req, res) => {
     res.render('admin/ai-settings', {
       title: 'AI 站长',
       providers,
+      functionMap,
+      mcpTavily,
+      aiConfig,
+      moderateToday,
+      replyToday,
       logs,
       logPage: page,
       logTotalPages: totalPages,
@@ -26,6 +37,7 @@ exports.settingsPage = async (req, res) => {
     res.render('admin/ai-settings', {
       title: 'AI 站长',
       providers: [],
+      functionMap: {},
       logs: [],
       logPage: 1,
       logTotalPages: 1,
@@ -103,10 +115,98 @@ exports.save = async (req, res) => {
   }
 };
 
+// 保存 AI 评论防护（配额/批量间隔/限流）配置
+exports.saveConfigAi = async (req, res) => {
+  try {
+    const fields = [
+      'daily_moderate_limit',
+      'daily_reply_limit',
+      'moderate_batch_interval_min',
+      'rate_limit_per_minute',
+      'rate_limit_blacklist_threshold',
+      'rate_limit_blacklist_hours'
+    ];
+    for (const f of fields) {
+      if (req.body[f] !== undefined) {
+        const v = parseInt(req.body[f]);
+        await aiModel.setAiConfig(f, isNaN(v) || v < 0 ? '0' : String(v));
+      }
+    }
+    req.session.messages = [{ type: 'success', text: '评论 AI 防护配置已保存' }];
+    res.redirect('/admin/ai');
+  } catch (err) {
+    req.session.messages = [{ type: 'error', text: '保存失败: ' + err.message }];
+    res.redirect('/admin/ai');
+  }
+};
+
+// 保存 MCP 配置（当前仅支持 Tavily）。保存前自动测试连通性，测试通过才保存启用
+exports.saveMcp = async (req, res) => {
+  try {
+    const apiKey = (req.body.api_key || '').trim();
+    if (!apiKey) {
+      req.session.messages = [{ type: 'error', text: '请填写 Tavily API Key' }];
+      return res.redirect('/admin/ai');
+    }
+
+    // 自动测试 Tavily 连通性，失败则不保存
+    try {
+      await webSearchTool.tavilySearch({ apiKey, query: '测试链接', maxResults: 1 });
+    } catch (testErr) {
+      req.session.messages = [{ type: 'error', text: 'Tavily 测试失败，未保存配置：' + testErr.message }];
+      return res.redirect('/admin/ai');
+    }
+
+    await aiModel.saveMcpSetting({ name: 'tavily', api_key: apiKey, enabled: true });
+    req.session.messages = [{ type: 'success', text: 'Tavily MCP 已启用，测试通过' }];
+    res.redirect('/admin/ai');
+  } catch (err) {
+    req.session.messages = [{ type: 'error', text: '保存失败: ' + err.message }];
+    res.redirect('/admin/ai');
+  }
+};
+
+// 禁用 MCP 配置（仅支持 Tavily）
+exports.disableMcp = async (req, res) => {
+  try {
+    await aiModel.saveMcpSetting({ name: 'tavily', api_key: '', enabled: false });
+    req.session.messages = [{ type: 'success', text: 'Tavily MCP 已禁用' }];
+    res.redirect('/admin/ai');
+  } catch (err) {
+    req.session.messages = [{ type: 'error', text: '操作失败: ' + err.message }];
+    res.redirect('/admin/ai');
+  }
+};
+
+// 保存功能→供应商映射（每个功能可指定使用哪个供应商）
+exports.saveFunctionMap = async (req, res) => {
+  try {
+    const map = {};
+    if (req.body.reply) map.reply = parseInt(req.body.reply);
+    if (req.body.moderate) map.moderate = parseInt(req.body.moderate);
+    if (req.body.polish) map.polish = parseInt(req.body.polish);
+    if (req.body.vision) map.vision = parseInt(req.body.vision);
+    await aiModel.saveFunctionMap(map);
+    req.session.messages = [{ type: 'success', text: '功能分配已保存' }];
+    res.redirect('/admin/ai');
+  } catch (err) {
+    req.session.messages = [{ type: 'error', text: '保存失败: ' + err.message }];
+    res.redirect('/admin/ai');
+  }
+};
+
 // 删除配置
 exports.delete = async (req, res) => {
   try {
-    await aiModel.delete(req.params.id);
+    const id = parseInt(req.params.id);
+    await aiModel.delete(id);
+    // 清理指向被删配置的功能映射
+    const cur = await aiModel.getFunctionMap();
+    const keep = {};
+    for (const func of ['reply', 'moderate', 'polish', 'vision']) {
+      if (cur[func] && cur[func] !== id) keep[func] = cur[func];
+    }
+    await aiModel.saveFunctionMap(keep);
     req.session.messages = [{ type: 'success', text: '配置已删除' }];
     res.redirect('/admin/ai');
   } catch (err) {

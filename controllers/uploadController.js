@@ -11,6 +11,34 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+// 列出本地上传目录中的所有图片（图片库）
+exports.listImages = async (req, res) => {
+  try {
+    if (!fs.existsSync(UPLOAD_DIR)) {
+      return res.json({ success: true, images: [] });
+    }
+
+    const supported = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i;
+    const images = fs.readdirSync(UPLOAD_DIR)
+      .filter(function(f) { return supported.test(f); })
+      .map(function(f) {
+        const stat = fs.statSync(path.join(UPLOAD_DIR, f));
+        return {
+          url: '/uploads/' + f,
+          name: f,
+          size: stat.size,
+          created_at: stat.mtime
+        };
+      })
+      .sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+
+    return res.json({ success: true, images: images });
+  } catch (err) {
+    console.error('获取图片列表失败:', err);
+    return res.status(500).json({ success: false, message: '获取图片列表失败: ' + err.message });
+  }
+};
+
 exports.upload = async (req, res) => {
   try {
     if (!req.file) {

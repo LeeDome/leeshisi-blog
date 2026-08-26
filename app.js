@@ -9,6 +9,8 @@ const indexRoutes = require('./routes/index');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const databaseRoutes = require('./routes/database');
+const aiScheduler = require('./services/aiScheduler');
+const commentRateLimiter = require('./services/commentRateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,6 +20,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('layout', 'layout');
 app.set('layout extractScripts', false);
 app.set('layout extractStyles', false);
+
+// 反向代理下正确识别 https（用于 canonical/OG/sitemap 生成绝对 URL）
+app.set('trust proxy', 1);
 
 app.use(expressLayouts);
 
@@ -65,6 +70,29 @@ app.use(function(req, res, next) {
   res.locals.siteName = res.locals.siteName || '李拾肆博客';
   res.locals.title = res.locals.title || '';
   res.locals.currentPath = res.locals.currentPath || req.path;
+  next();
+});
+
+// 全局 SEO 默认值（对所有页面生效，含 404/500；index 路由会被 common.js 用站点配置覆盖）
+app.use(function(req, res, next) {
+  if (typeof res.locals.baseUrl === 'undefined') {
+    res.locals.baseUrl = req.protocol + '://' + req.get('host');
+  }
+  if (typeof res.locals.canonical === 'undefined') {
+    res.locals.canonical = res.locals.baseUrl + req.path;
+  }
+  if (typeof res.locals.description === 'undefined') res.locals.description = '';
+  if (typeof res.locals.keywords === 'undefined') res.locals.keywords = '';
+  if (typeof res.locals.ogType === 'undefined') res.locals.ogType = 'website';
+  if (typeof res.locals.ogImage === 'undefined') res.locals.ogImage = '';
+  if (typeof res.locals.noindex === 'undefined') res.locals.noindex = false;
+  // 相对路径转绝对 URL（用于 OG 图片 / JSON-LD）
+  res.locals.absoluteUrl = function(url) {
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url) || url.indexOf('//') === 0) return url;
+    if (url.indexOf('/') === 0) return res.locals.baseUrl + url;
+    return url;
+  };
   next();
 });
 
@@ -130,6 +158,10 @@ async function startServer() {
       console.log('  默认管理员: admin@blog.com / admin123');
       console.log('========================================');
     });
+
+    // 启动后台任务：AI 评论批量审核/回复调度 + 限流内存清理
+    aiScheduler.start();
+    commentRateLimiter.startCleanup();
   } catch (err) {
     console.error('启动失败:', err);
     process.exit(1);

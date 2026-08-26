@@ -14,6 +14,9 @@ async function loadCommonData(req, res, next) {
     res.locals.footerLinks = settings ? settings.footer_links : '[]';
     res.locals.siteStartTime = settings ? settings.start_time : '';
     res.locals.icpRecord = settings ? settings.icp_record : '';
+    res.locals.siteDescription = settings ? settings.site_description : '';
+    res.locals.siteKeywords = settings ? settings.site_keywords : '';
+    res.locals.siteUrl = settings && settings.site_url ? settings.site_url.replace(/\/+$/, '') : '';
   } catch (err) {
     res.locals.settings = {};
     res.locals.siteName = '李拾肆博客';
@@ -22,6 +25,9 @@ async function loadCommonData(req, res, next) {
     res.locals.footerLinks = '[]';
     res.locals.siteStartTime = '';
     res.locals.icpRecord = '';
+    res.locals.siteDescription = '';
+    res.locals.siteKeywords = '';
+    res.locals.siteUrl = '';
   }
 
   try {
@@ -64,6 +70,16 @@ async function loadCommonData(req, res, next) {
 
   res.locals.currentYear = new Date().getFullYear();
   res.locals.currentPath = req.path;
+
+  // ===== SEO 默认值（控制器可通过 render 数据覆盖） =====
+  res.locals.baseUrl = res.locals.siteUrl || (req.protocol + '://' + req.get('host'));
+  res.locals.canonical = res.locals.baseUrl + req.path;
+  res.locals.description = res.locals.siteDescription || '';
+  res.locals.keywords = res.locals.siteKeywords || '';
+  res.locals.ogType = 'website';
+  res.locals.ogImage = res.locals.siteLogo || '';
+  // 搜索页无独立价值，禁止索引
+  res.locals.noindex = req.path.indexOf('/search') === 0;
 
   next();
 }

@@ -60,6 +60,10 @@ router.post('/admin/database/import', isAuthenticated, adminController.databaseI
 router.get('/admin/ai', isAuthenticated, aiController.settingsPage);
 router.post('/admin/ai/models', isAuthenticated, aiController.listModels);
 router.post('/admin/ai', isAuthenticated, aiController.save);
+router.post('/admin/ai/functions', isAuthenticated, aiController.saveFunctionMap);
+router.post('/admin/ai/mcp', isAuthenticated, aiController.saveMcp);
+router.post('/admin/ai/mcp/disable', isAuthenticated, aiController.disableMcp);
+router.post('/admin/ai/config', isAuthenticated, aiController.saveConfigAi);
 router.post('/admin/ai/:id/delete', isAuthenticated, aiController.delete);
 router.post('/admin/ai/polish', isAuthenticated, aiController.polish);
 
