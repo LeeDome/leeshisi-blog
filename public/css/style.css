@@ -2153,9 +2153,42 @@ ol {
     gap: 10px;
   }
 
+  /* 手机端评论区：压缩内边距、头像与缩进，避免左侧竖线区域挤占正文空间 */
+  .comment-item {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .comment-avatar img {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* 子回复：头像更小、缩进更浅 */
+  .comment-children .comment-avatar img {
+    width: 28px;
+    height: 28px;
+  }
+
   .comment-children {
     margin-left: 0;
-    padding-left: 16px;
+    margin-top: 10px;
+    padding-left: 10px;
+  }
+
+  /* 昵称 + 回复对象 + 时间在窄屏允许换行，避免横向溢出 */
+  .comment-meta {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .comment-actions {
+    flex-wrap: wrap;
+  }
+
+  .comment-content img {
+    max-width: 100%;
+    height: auto;
   }
 
   .article-detail .article-header .article-title {
@@ -2185,6 +2218,32 @@ ol {
 
   .article-body {
     padding: 14px;
+  }
+
+  /* 超小屏评论区：进一步压缩头像与缩进；保留 2px 细线维持层级感 */
+  .comment-item {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .comment-avatar img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .comment-children .comment-avatar img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .comment-children {
+    padding-left: 6px;
+    border-left-width: 1px;
+  }
+
+  .comment-content pre {
+    font-size: 0.85em;
+    padding: 6px 8px;
   }
 
   .pagination a,
@@ -2521,23 +2580,26 @@ ol {
   top: 80px;
   width: 40px;
   height: 40px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: var(--bg-header);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   z-index: 100;
   cursor: pointer;
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  line-height: 1;
   padding: 0;
+  transition: color var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
 .toc-float-toggle:hover {
-  background: var(--accent-hover);
+  color: var(--accent);
+  border-color: var(--border);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* 给标题添加滚动边距，避开 fixed header */

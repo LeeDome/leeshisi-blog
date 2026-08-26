@@ -73,6 +73,8 @@ exports.dashboard = async (req, res) => {
        LIMIT 5`
     );
 
+    const ipBlacklist = commentModel.getIpBlacklist();
+
     res.render('admin/dashboard', {
       title: '仪表盘',
       articleCount: articleCount.count,
@@ -81,6 +83,7 @@ exports.dashboard = async (req, res) => {
       pageCount: pageCount.count,
       recentArticles,
       recentComments,
+      ipBlacklist,
       layout: false
     });
   } catch (err) {
@@ -92,9 +95,21 @@ exports.dashboard = async (req, res) => {
       pageCount: 0,
       recentArticles: [],
       recentComments: [],
+      ipBlacklist: [],
       error: '加载仪表盘失败',
       layout: false
     });
+  }
+};
+
+// 解除 IP 拉黑
+exports.ipBlacklistRemove = async (req, res) => {
+  try {
+    const ip = req.params.ip;
+    if (ip) commentModel.removeIpBlacklist(ip);
+    res.redirect('/admin#ip-blacklist');
+  } catch (err) {
+    res.redirect('/admin#ip-blacklist');
   }
 };
 

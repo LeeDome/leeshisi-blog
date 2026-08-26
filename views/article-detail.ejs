@@ -275,7 +275,64 @@
         if (n && form.dataset.guarded === '1') {
           ev.preventDefault();
           showToast && showToast('该昵称与博主昵称重合，请更换昵称');
+          return;
         }
+        // 局部刷新：AJAX 提交评论，成功后把新评论插入评论区，不清空整页
+        ev.preventDefault();
+        var btn = form.querySelector('.comment-submit-btn');
+        if (btn) btn.disabled = true;
+
+        var body = new URLSearchParams(new FormData(form)).toString();
+        fetch('/comment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+          },
+          body: body
+        })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (btn) btn.disabled = false;
+            if (data.success) {
+              var textarea = form.querySelector('textarea[name="content"]');
+              if (textarea) textarea.value = '';
+              var wrap = document.createElement('div');
+              wrap.innerHTML = data.html;
+              var node = wrap.children[0];
+              if (!node) { if (showToast) showToast('评论已提交'); return; }
+
+              if (data.parentId) {
+                // 子回复：追加到父评论的 children 容器
+                var children = document.getElementById('comment-children-' + data.parentId);
+                if (children) { children.appendChild(node); }
+                else { var replyForm = document.getElementById('reply-form-' + data.parentId); if (replyForm && replyForm.parentNode) replyForm.parentNode.insertBefore(node, replyForm.nextSibling); }
+              } else {
+                // 顶级评论：插入到列表头部
+                var list = document.getElementById('comments');
+                var ul = list.querySelector('.comment-list');
+                if (ul) { ul.insertBefore(node, ul.firstChild); }
+                else { var empty = list.querySelector('.empty-state'); if (empty) empty.remove(); ul = document.createElement('ul'); ul.className = 'comment-list'; list.insertBefore(ul, list.querySelector('.comment-form-wrap')); ul.appendChild(node); }
+              }
+              // 更新评论数
+              var title = document.querySelector('.comments-title');
+              if (title) {
+                var m = /[（(]?\s*(\d+)\s*[）)]?/.exec(title.textContent);
+                var cur = m ? parseInt(m[1]) : 0;
+                title.textContent = title.textContent.replace(/\d+/, cur + 1);
+              }
+              // 重新绑定动态插入的元素事件、渲染 markdown 依赖（mermaid 等）
+              bindCommentActions(node.parentNode || node);
+              if (typeof initMermaidIn === 'function') initMermaidIn([node]);
+              if (showToast) showToast('评论已提交');
+            } else {
+              if (showToast) showToast(data.message || '评论失败，请重试');
+            }
+          })
+          .catch(function() {
+            if (btn) btn.disabled = false;
+            if (showToast) showToast('提交失败，请重试');
+          });
       });
     });
     scope.querySelectorAll('.comment-reply-btn').forEach(function(btn) {
@@ -718,6 +775,8 @@
 
   // 加载某个根评论下的更多子回复
   function loadMoreReplies(btn, preventRecursion) {
+    if (btn.disabled) return; // 防止快速双击导致重复请求
+    btn.disabled = true;
     var rootId = btn.dataset.rootId;
     var nextPage = parseInt(btn.dataset.nextPage || '1');
     var target = document.getElementById('comment-children-' + rootId);
@@ -729,30 +788,42 @@
           // 直接把返回的 <li> 追加到当前根评论的 children 容器末尾，避免嵌套产生多余的边框
           var frag = document.createElement('div');
           frag.innerHTML = data.html;
-          if (target) {
-            Array.prototype.forEach.call(frag.children, function(node) {
+          // children 是 live 集合，先快照再逐个移动，否则边移动边遍历会跳项丢失节点
+          var nodes = Array.prototype.slice.call(frag.children);
+          var inserted = [];
+          nodes.forEach(function(node) {
+            // 按 id 去重：页面已存在同 id 评论则跳过（如新评论插入导致分页偏移时的重叠）
+            if (node.id && document.getElementById(node.id)) return;
+            if (target) {
               target.appendChild(node);
-            });
-          } else {
-            btn.parentNode.insertBefore(frag, btn);
-          }
-          bindCommentActions(frag);
-          initMermaidIn([frag]);
+            } else if (btn.parentNode) {
+              btn.parentNode.insertBefore(node, btn);
+            }
+            bindCommentActions(node);
+            inserted.push(node);
+          });
+          // 在真正插入 DOM 的节点上渲染 mermaid
+          if (inserted.length > 0) initMermaidIn(inserted);
           if (data.remaining > 0) {
             btn.dataset.nextPage = data.nextPage;
             btn.textContent = '展开更多回复 (' + data.remaining + ')';
+            btn.disabled = false;
           } else {
             if (btn.parentNode) btn.parentNode.removeChild(btn);
           }
+        } else {
+          btn.disabled = false;
         }
       })
-      .catch(function() { btn.textContent = '加载失败，点击重试'; });
+      .catch(function() { btn.textContent = '加载失败，点击重试'; btn.disabled = false; });
   }
 
   function buttonAndRepliesHidden(loadMoreTopBtn) { ; }
 
   // 顶级评论加载更多
   function loadMoreComments(btn) {
+    if (btn.disabled) return; // 防止快速双击导致重复请求
+    btn.disabled = true;
     var nextPage = parseInt(btn.dataset.nextPage || '1');
     var list = document.getElementById('comments'); // 评论区容器
     var url = '/comment/load?page_type=article&article_id=<%= article.id %>&page=' + nextPage;
@@ -762,22 +833,31 @@
         if (data.success && data.html) {
           var wrap = document.createElement('div');
           wrap.innerHTML = data.html;
-          // 追加到评论列表末尾
+          // 追加到评论列表末尾（先快照，wrap.children 是 live 集合，边移动边遍历会跳项丢失节点）
           var target = document.querySelector('.comment-list') || null;
-          Array.prototype.forEach.call(wrap.children, function(node) {
+          var nodes = Array.prototype.slice.call(wrap.children);
+          var inserted = [];
+          nodes.forEach(function(node) {
+            // 按 id 去重：页面已存在同 id 评论则跳过（如新评论插入导致分页偏移时的重叠）
+            if (node.id && document.getElementById(node.id)) return;
             if (target) target.appendChild(node);
             else list.insertBefore(node, btn);
+            bindCommentActions(node);
+            inserted.push(node);
           });
-          bindCommentActions(wrap);
-          initMermaidIn([wrap]);
+          // 在真正插入 DOM 的节点上渲染 mermaid
+          if (inserted.length > 0) initMermaidIn(inserted);
           if (data.hasMore) {
             btn.dataset.nextPage = data.nextPage;
+            btn.disabled = false;
           } else {
             btn.parentNode.removeChild(btn);
           }
+        } else {
+          btn.disabled = false;
         }
       })
-      .catch(function() { btn.textContent = '加载失败，点击重试'; });
+      .catch(function() { btn.textContent = '加载失败，点击重试'; btn.disabled = false; });
   }
 
   // 绑定顶级评论加载更多
@@ -897,17 +977,17 @@
     // 移动端切换按钮
     var toggle = document.createElement('button');
     toggle.className = 'toc-float-toggle';
-    toggle.innerHTML = '&#x2022;&#x2022;&#x2022;';
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
     toggle.setAttribute('aria-label', '显示目录');
     toggle.addEventListener('click', function() {
       toc.classList.toggle('visible');
     });
     document.body.appendChild(toggle);
 
-    // 点击页面其他区域关闭
+    // 点击页面其他区域关闭（toggle.contains 兼容点击到按钮内 SVG 的情况）
     document.addEventListener('click', function(e) {
       if (window.innerWidth > 768) return;
-      if (toc.classList.contains('visible') && !toc.contains(e.target) && e.target !== toggle) {
+      if (toc.classList.contains('visible') && !toc.contains(e.target) && !toggle.contains(e.target)) {
         toc.classList.remove('visible');
       }
     });

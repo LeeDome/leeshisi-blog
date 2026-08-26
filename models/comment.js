@@ -314,6 +314,21 @@ function addIpBlacklist(ip, reason, hours) {
     [ip, reason]);
 }
 
+// 查询所有仍在拉黑期内的 IP（按创建时间倒序）
+function getIpBlacklist() {
+  return all(
+    `SELECT ip, blocked_until, reason, created_at
+     FROM ip_blacklist
+     WHERE blocked_until > datetime('now','localtime')
+     ORDER BY created_at DESC`
+  );
+}
+
+// 解除某 IP 的拉黑（删除记录）
+function removeIpBlacklist(ip) {
+  run('DELETE FROM ip_blacklist WHERE ip = ?', [ip]);
+}
+
 module.exports = {
   findByArticle,
   findChildrenForRoot,
@@ -331,5 +346,7 @@ module.exports = {
   vote,
   findPendingModeration,
   isIpBlocked,
-  addIpBlacklist
+  addIpBlacklist,
+  getIpBlacklist,
+  removeIpBlacklist
 };

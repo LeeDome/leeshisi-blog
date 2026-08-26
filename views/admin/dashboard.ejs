@@ -102,6 +102,40 @@
         </tbody>
       </table>
     </div>
+
+    <div class="panel" id="ip-blacklist">
+      <h3>评论区被封禁 IP</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>IP 地址</th>
+            <th>封禁原因</th>
+            <th>拉黑时间</th>
+            <th>解除时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof ipBlacklist !== 'undefined' && ipBlacklist.length > 0) { %>
+            <% ipBlacklist.forEach(function(item) { %>
+            <tr>
+              <td><code><%= item.ip %></code></td>
+              <td><%= item.reason || '-' %></td>
+              <td><%= new Date(item.created_at).toLocaleString('zh-CN') %></td>
+              <td><%= new Date(item.blocked_until).toLocaleString('zh-CN') %></td>
+              <td>
+                <form method="POST" action="/admin/ip-blacklist/<%= encodeURIComponent(item.ip) %>/remove" onsubmit="return confirm('确定解除该 IP 的封禁吗？')">
+                  <button type="submit" class="btn btn-sm btn-danger">解除封禁</button>
+                </form>
+              </td>
+            </tr>
+            <% }); %>
+          <% } else { %>
+            <tr><td colspan="5" class="text-muted" style="text-align:center;">暂无被封禁的 IP</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   </main>
 </body>
 </html>

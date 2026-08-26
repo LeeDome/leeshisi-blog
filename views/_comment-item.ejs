@@ -103,7 +103,7 @@
     </ul>
     <% if (comment.hasMoreChildren) { %>
     <div class="load-more-replies-wrap">
-      <button type="button" class="load-more-replies-btn" data-root-id="<%= comment.id %>" data-next-page="1" data-loaded="false">展开更多回复 (<%= comment.childrenTotal %>)</button>
+      <button type="button" class="load-more-replies-btn" data-root-id="<%= comment.id %>" data-next-page="2" data-loaded="false">展开更多回复 (<%= comment.childrenTotal - (comment.children ? comment.children.length : 0) %>)</button>
     </div>
     <% } %>
     <% } %>

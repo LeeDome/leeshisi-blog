@@ -41,6 +41,7 @@ router.get('/admin/comments', isAuthenticated, adminController.comments);
 router.post('/admin/comments/:id/approve', isAuthenticated, adminController.commentApprove);
 router.post('/admin/comments/:id/spam', isAuthenticated, adminController.commentMarkSpam);
 router.post('/admin/comments/:id/delete', isAuthenticated, adminController.commentDelete);
+router.post('/admin/ip-blacklist/:ip/remove', isAuthenticated, adminController.ipBlacklistRemove);
 
 router.get('/admin/pages', isAuthenticated, adminController.pages);
 router.get('/admin/pages/:id/edit', isAuthenticated, adminController.pageEdit);
