@@ -47,7 +47,14 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: function(res, filePath) {
+    // 第三方库文件（lib/）基本不变，开启浏览器长缓存，避免每次重复拉取
+    if (filePath.indexOf(path.join(__dirname, 'public', 'lib')) === 0) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
 
 const { renderMarkdown } = require('./utils/markdown');
 
