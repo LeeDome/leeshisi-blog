@@ -12,15 +12,18 @@
     <h4 class="sidebar-title">最近评论</h4>
     <ul class="recent-comments">
       <% recentComments.forEach(function(comment) { %>
-      <li class="comment-item">
-        <p class="comment-meta">
-          <strong><%= comment.nickname %></strong>
-          <% if (comment.articleTitle) { %>
-            <span class="comment-article">评论了 <a href="/article/<%= comment.article_id %>"><%= comment.articleTitle %></a></span>
-          <% } %>
-          <span class="comment-time"><%= comment.created_at %></span>
-        </p>
-        <p class="comment-snippet"><%= comment.content && comment.content.length > 60 ? comment.content.substring(0, 60) + '...' : comment.content %></p>
+      <li class="rc-item">
+        <div class="rc-item-head">
+          <img class="rc-avatar" src="<%= comment.is_author ? (authorAvatar || '/images/default-avatar.svg') : gravatar(comment.email, 32) %>" alt="<%= comment.nickname %>">
+          <div class="rc-item-info">
+            <span class="rc-nickname"><%= comment.nickname %></span>
+            <span class="rc-time"><%= comment.created_at %></span>
+          </div>
+        </div>
+        <% if (comment.articleTitle) { %>
+        <p class="rc-article">评论了 <a href="/article/<%= comment.article_id %>"><%= comment.articleTitle %></a></p>
+        <% } %>
+        <p class="rc-snippet"><%= comment.content && comment.content.length > 60 ? comment.content.substring(0, 60) + '...' : comment.content %></p>
       </li>
       <% }); %>
     </ul>

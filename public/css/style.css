@@ -1643,30 +1643,82 @@ ol {
   padding: 0;
 }
 
-.recent-comments li {
-  padding: 6px 0;
-  font-size: 0.85em;
-  color: var(--text-secondary);
+/* 最近评论：头像 + 昵称一行，时间右对齐，摘要独立成行，避免挤成一团 */
+.rc-item {
+  padding: 10px 0;
   border-bottom: 1px dashed var(--border-light);
-  line-height: 1.5;
 }
 
-.recent-comments li:last-child {
+.rc-item:last-child {
   border-bottom: none;
 }
 
-.recent-comments li a {
-  color: var(--text-secondary);
+.rc-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rc-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  filter: grayscale(30%);
+}
+
+.rc-item-info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rc-nickname {
+  font-weight: 600;
+  font-size: 0.88em;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-time {
+  font-size: 0.72em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.rc-article {
+  margin: 4px 0 2px;
+  font-size: 0.76em;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rc-article a {
+  color: var(--accent);
   transition: color var(--transition);
 }
 
-.recent-comments li a:hover {
-  color: var(--text-primary);
+.rc-article a:hover {
+  color: var(--accent-hover);
 }
 
-.recent-comments li .rc-article {
-  font-size: 0.85em;
-  color: var(--text-muted);
+.rc-snippet {
+  margin: 2px 0 0;
+  font-size: 0.84em;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  /* 多行截断，最多 2 行 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hot-articles {

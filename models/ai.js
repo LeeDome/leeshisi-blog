@@ -834,10 +834,9 @@ mermaid 语法必须严格遵守以下规范，否则图表渲染会失败：
 - 节点文本包含特殊字符（括号、引号、百分号）时，必须用双引号包裹：A["文本(带括号)"]
 - 不要在 mermaid 图中使用 emoji，可能解析失败
 
-回复边界（硬性要求，必须遵守）：
-- 回复必须简短，正文一般控制在 200~300 字以内，能一句话说清楚就不要写多，评论区空间有限。
-- 明确拒绝大篇幅输出：如果用户要求写长篇、万字长文、完整长教程、大量代码或大段内容，不要真的去长篇输出，应礼貌说明评论里不适合展开，可给出要点或极简的精简版。
-- 克制使用标题层级、列表、代码块、图表等 markdown，仅在必要且简短时使用，避免回复过长刷屏。`
+回复要求：
+- 优先把问题解释清楚、图文完整，不要因为篇幅而中途截断，尤其是 mermaid 图表要完整写全（包括 subgraph 子图、所有节点和连线），不要半途省略。
+- 篇幅以讲清楚为准，不设固定字数上限；用户需要详细展开时就完整展开。`
     }
   ];
 
@@ -870,29 +869,21 @@ mermaid 语法必须严格遵守以下规范，否则图表渲染会失败：
           toolExecutor: toolExecutor,
           maxRounds: 10,
           timeoutMs: 600000,
-          max_tokens: 500,
           fallbackContent: ''
         });
         if (!replyContent) throw new Error('Agent 无有效输出');
       } else {
         // 无文章上下文/未启用工具：直接单次回复
-        replyContent = await callAI(aiProvider, messages, { max_tokens: 500 });
+        replyContent = await callAI(aiProvider, messages);
       }
     } catch (err) {
       // 供应商不支持 tools / 超时等异常：回退为"标题+摘要+开头"的单次回复，保证有回复
-      replyContent = await callAI(aiProvider, messages, { max_tokens: 500 });
+      replyContent = await callAI(aiProvider, messages);
     }
     const duration = Date.now() - startTime;
 
     // 后处理：清洗 AI 回复中可能残留的前缀
     let cleanedContent = replyContent.replace(/^[\u4e00-\u9fa5a-zA-Z0-9_]+:\s*[\u4e00-\u9fa5a-zA-Z0-9_]+:\s*/, '').replace(/^[\u4e00-\u9fa5a-zA-Z0-9_]+:\s*/, '');
-
-    // 硬性长度上限：防止大篇幅内容刷屏（评论回复不应过长）
-    const MAX_REPLY_CHARS = 600;
-    if (cleanedContent.length > MAX_REPLY_CHARS) {
-      cleanedContent = cleanedContent.substring(0, MAX_REPLY_CHARS) +
-        '\n\n…（评论区篇幅有限，已为你精简。如需更详细的展开，可以再给我留言～）';
-    }
 
     // 保存 AI 回复，is_author = 1，表示是作者（AI站长）
     const { create } = require('./comment');
