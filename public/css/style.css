@@ -998,6 +998,7 @@ ol {
 .comment-form input[type="text"],
 .comment-form input[type="email"] {
   flex: 1;
+  min-width: 0;
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -1250,6 +1251,13 @@ ol {
 .comment-actions .like-btn:hover,
 .comment-action-btn.comment-like-btn:hover {
   color: var(--accent-hover);
+}
+
+.comment-action-btn.comment-like-btn.active,
+.comment-action-btn.comment-like-btn.active:hover {
+  color: #fff;
+  border-color: #e0455c;
+  background-color: #e0455c;
 }
 
 .comment-children {

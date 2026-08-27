@@ -446,9 +446,10 @@ async function chatOnce(provider, messages, options = {}) {
       };
 
       const req = client.request(reqOptions, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
+        let chunks = [];
+        res.on('data', (chunk) => chunks.push(chunk));
         res.on('end', () => {
+          const data = Buffer.concat(chunks).toString('utf8');
           try {
             if (res.statusCode !== 200) {
               const err = new Error(`API 返回错误 ${res.statusCode}: ${data}`);
@@ -599,9 +600,10 @@ async function listModels({ apiUrl, apiKey }) {
         'Accept': 'application/json'
       }
     }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => data += chunk);
+      let chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
+        const data = Buffer.concat(chunks).toString('utf8');
         try {
           if (res.statusCode !== 200) {
             return reject(new Error(`API 返回错误 ${res.statusCode}: ${data}`));

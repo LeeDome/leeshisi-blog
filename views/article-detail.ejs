@@ -262,6 +262,36 @@
     }
   }
 
+  // ========== 评论身份缓存：提交后自动记住邮箱/昵称/网站，下次自动填充 ==========
+  var COMMENT_CACHE_KEY = 'comment_identity_cache';
+
+  function saveCommentCache(form) {
+    try {
+      var email = (form.querySelector('[name="email"]') || {}).value || '';
+      var nickname = (form.querySelector('[name="nickname"]') || {}).value || '';
+      var website = (form.querySelector('[name="website"]') || {}).value || '';
+      // 仅缓存填写了邮箱+昵称、或填了网站的身份信息
+      if (!email && !nickname && !website) return;
+      localStorage.setItem(COMMENT_CACHE_KEY, JSON.stringify({ email: email, nickname: nickname, website: website }));
+    } catch (e) {}
+  }
+
+  function loadCommentCache() {
+    try {
+      var raw = localStorage.getItem(COMMENT_CACHE_KEY);
+      if (!raw) return;
+      var data = JSON.parse(raw) || {};
+      document.querySelectorAll('form[action="/comment"]').forEach(function(form) {
+        var email = form.querySelector('[name="email"]');
+        var nickname = form.querySelector('[name="nickname"]');
+        var website = form.querySelector('[name="website"]');
+        if (email && data.email) email.value = data.email;
+        if (nickname && data.nickname) nickname.value = data.nickname;
+        if (website && typeof data.website === 'string') website.value = data.website;
+      });
+    } catch (e) {}
+  }
+
   // 评论交互事件统一绑定（支持对动态加载的评论局部重新绑定）
   function bindCommentActions(scope) {
     // 昵称保护：输入完成后即时校验
@@ -295,6 +325,7 @@
           .then(function(data) {
             if (btn) btn.disabled = false;
             if (data.success) {
+              saveCommentCache(form);
               var textarea = form.querySelector('textarea[name="content"]');
               if (textarea) textarea.value = '';
               var wrap = document.createElement('div');
@@ -868,6 +899,7 @@
   }
 
   // 初始绑定评论交互 + 渲染初始 mermaid
+  loadCommentCache();
   bindCommentActions(document);
   initMermaidIn([document.getElementById('articleContent'), document.getElementById('comments')]);
 // ========== 悬浮目录 (TOC) ==========
