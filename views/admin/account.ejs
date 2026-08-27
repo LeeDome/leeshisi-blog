@@ -38,9 +38,9 @@
       <form method="POST" action="/admin/account">
         <h3 style="font-size:14px;color:#888;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid #f0f0f0;">账号信息</h3>
         <div class="form-group">
-          <label for="email">登录邮箱</label>
-          <input type="email" id="email" name="email" value="<%= user && user.email %>" required>
-          <span class="help-text">用于登录，请妥善保管</span>
+          <label for="username">登录账号</label>
+          <input type="text" id="username" name="username" value="<%= user && user.username %>" maxlength="50" required>
+          <span class="help-text">用于登录，可设置为邮箱或普通账号，请妥善保管</span>
         </div>
         <div class="form-group">
           <label for="nickname">昵称</label>

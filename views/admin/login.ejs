@@ -17,9 +17,13 @@
     .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #333; font-weight: 500; }
     .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; transition: border-color 0.3s; }
     .form-group input:focus { outline: none; border-color: #4096ff; box-shadow: 0 0 0 2px rgba(64,150,255,0.1); }
+    .captcha-row { display: flex; gap: 10px; align-items: center; }
+    .captcha-row input { flex: 1; }
+    .captcha-img { height: 40px; border: 1px solid #d9d9d9; border-radius: 4px; cursor: pointer; }
     .btn-submit { width: 100%; padding: 10px; background: #4096ff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
     .btn-submit:hover { background: #1677ff; }
     .error-msg { background: #fff2f0; border: 1px solid #ffccc7; color: #ff4d4f; padding: 10px 12px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
+    .success-msg { background: #f6ffed; border: 1px solid #b7eb8f; color: #52c41a; padding: 10px 12px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -31,20 +35,35 @@
         <div class="error-msg"><%= error %></div>
       <% } %>
       <% if (typeof successMessage !== 'undefined' && successMessage) { %>
-        <div class="error-msg" style="background:#f6ffed;border-color:#b7eb8f;color:#52c41a;"><%= successMessage %></div>
+        <div class="success-msg"><%= successMessage %></div>
       <% } %>
-      <form method="POST" action="/admin/login">
+      <form method="POST" action="/admin/login" autocomplete="off">
         <div class="form-group">
-          <label for="email">邮箱</label>
-          <input type="email" id="email" name="email" placeholder="请输入管理员邮箱" required>
+          <label for="account">账号</label>
+          <input type="text" id="account" name="account" placeholder="请输入登录账号" autocomplete="username" required>
         </div>
         <div class="form-group">
           <label for="password">密码</label>
-          <input type="password" id="password" name="password" placeholder="请输入密码" required>
+          <input type="password" id="password" name="password" placeholder="请输入密码" autocomplete="current-password" required>
         </div>
+        <% if (typeof needsCaptcha !== 'undefined' && needsCaptcha) { %>
+        <div class="form-group">
+          <label for="captcha">验证码</label>
+          <div class="captcha-row">
+            <input type="text" id="captcha" name="captcha" placeholder="请输入图形验证码" autocomplete="off" maxlength="4" required>
+            <img src="/admin/login/captcha" class="captcha-img" id="captchaImg" title="看不清？点击刷新" alt="验证码">
+          </div>
+        </div>
+        <% } %>
         <button type="submit" class="btn-submit">登 录</button>
       </form>
     </div>
   </div>
+  <script>
+    // 验证码点击刷新
+    document.getElementById('captchaImg') && document.getElementById('captchaImg').addEventListener('click', function() {
+      this.src = '/admin/login/captcha?t=' + Date.now();
+    });
+  </script>
 </body>
 </html>

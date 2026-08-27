@@ -4,6 +4,8 @@ const databaseModule = require('../config/database');
 const fs = require('fs');
 const path = require('path');
 const userModel = require('../models/user');
+const loginGuard = require('../services/loginGuard');
+const captcha = require('../utils/captcha');
 const articleModel = require('../models/article');
 const categoryModel = require('../models/category');
 const tagModel = require('../models/tag');
@@ -22,24 +24,75 @@ function generateSlug(title) {
 }
 
 exports.loginPage = (req, res) => {
-  res.render('admin/login', { title: '管理员登录', error: null, layout: false });
+  const ip = req.ip;
+  const blocked = loginGuard.isBlocked(ip);
+  // 错误信息经 POST 失败后的重定向带过来（PRG 模式），读取后清除，避免刷新仍显示旧错误
+  const error = req.session.loginError || (blocked
+    ? '尝试次数过多，账号已被临时封禁，请在约' + blocked.minutes + '分钟后重试'
+    : null);
+  req.session.loginError = null;
+  res.render('admin/login', {
+    title: '管理员登录',
+    error,
+    needsCaptcha: loginGuard.needsCaptcha(ip),
+    blocked: blocked ? true : false,
+    layout: false
+  });
+};
+
+// 验证码图片：生成并写入 session，前端 <img> 加载时调用
+exports.captchaImage = (req, res) => {
+  const { text, svg } = captcha.generate();
+  req.session.captcha = text;
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(svg);
 };
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await userModel.findByEmail(email);
-    if (!user) {
-      return res.render('admin/login', { title: '管理员登录', error: '邮箱不存在', layout: false });
+    const ip = req.ip;
+
+    // 1) 封禁检查
+    const blocked = loginGuard.isBlocked(ip);
+    if (blocked) {
+      req.session.loginError = '尝试次数过多，账号已被临时封禁，请在约' + blocked.minutes + '分钟后重试';
+      return res.redirect('/admin/login');
     }
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
-      return res.render('admin/login', { title: '管理员登录', error: '密码错误', layout: false });
+
+    const { account, password, captcha: captchaInput } = req.body;
+
+    // 2) 验证码校验（有过失败记录后需要）
+    if (loginGuard.needsCaptcha(ip)) {
+      const expected = (req.session.captcha || '').toLowerCase();
+      const got = (captchaInput || '').toLowerCase();
+      if (!got || got !== expected) {
+        req.session.loginError = '验证码错误';
+        return res.redirect('/admin/login');
+      }
     }
+
+    // 3) 账号密码校验
+    const user = await userModel.findByLogin((account || '').trim());
+    const ok = !!(user && await bcrypt.compare(password || '', user.password_hash));
+    if (!ok) {
+      const res2 = loginGuard.registerFailure(ip);
+      if (res2.blocked) {
+        req.session.loginError = '尝试次数过多，账号已被临时封禁约' + res2.minutes + '分钟';
+      } else {
+        req.session.loginError = '账号或密码错误，还剩 ' + loginGuard.remainingAttempts(ip) + ' 次机会';
+      }
+      return res.redirect('/admin/login');
+    }
+
+    // 4) 成功：清除该 IP 的失败记录与验证码
+    loginGuard.clear(ip);
+    req.session.captcha = null;
     req.session.user = user;
     res.redirect('/admin');
   } catch (err) {
-    res.render('admin/login', { title: '管理员登录', error: '登录失败，请重试', layout: false });
+    req.session.loginError = '登录失败，请重试';
+    res.redirect('/admin/login');
   }
 };
 
@@ -192,11 +245,17 @@ exports.passwordPage = (req, res) => {
 exports.passwordUpdate = async (req, res) => {
   try {
     const { current_password, new_password, confirm_password } = req.body;
-    const { nickname, email, avatar } = req.body;
+    const { username, nickname, avatar } = req.body;
 
     const user = await userModel.findById(req.session.user.id);
     if (!user) {
       req.session.messages = [{ type: 'error', text: '用户不存在' }];
+      return res.redirect('/admin/account');
+    }
+
+    // 账号必填：允许普通字符串，去首尾空格
+    if (username === undefined || !String(username).trim()) {
+      req.session.messages = [{ type: 'error', text: '账号不能为空' }];
       return res.redirect('/admin/account');
     }
 
@@ -222,8 +281,8 @@ exports.passwordUpdate = async (req, res) => {
       password_hash = await bcrypt.hash(new_password, 10);
     }
 
-    if (nickname !== undefined || avatar !== undefined) {
-      await userModel.update(user.id, { nickname, email, avatar, password_hash });
+    if (nickname !== undefined || avatar !== undefined || username !== undefined) {
+      await userModel.update(user.id, { username: String(username).trim(), nickname, avatar, password_hash });
     } else {
       await userModel.updatePassword(user.id, password_hash);
     }
@@ -240,7 +299,7 @@ exports.passwordUpdate = async (req, res) => {
 
 exports.seedAdmin = async (req, res) => {
   try {
-    const existing = await userModel.findByEmail('admin@blog.com');
+    const existing = await userModel.findByEmail('admin@blog.com') || await userModel.findByUsername('admin');
     if (existing) {
       return res.json({ message: '管理员已存在' });
     }

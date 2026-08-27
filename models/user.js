@@ -19,6 +19,13 @@ async function findByUsername(username) {
   return get('SELECT * FROM users WHERE username = ?', [username]);
 }
 
+// 账号登录：账号（username）或邮箱均可作为登录标识
+async function findByLogin(account) {
+  await getDb();
+  if (!account) return null;
+  return get('SELECT * FROM users WHERE username = ? OR email = ? LIMIT 1', [account, account]);
+}
+
 async function findById(id) {
   await getDb();
   return get('SELECT * FROM users WHERE id = ?', [id]);
@@ -62,4 +69,4 @@ async function getAuthor() {
   return get('SELECT * FROM users WHERE role = ? ORDER BY id ASC LIMIT 1', ['admin']);
 }
 
-module.exports = { create, findByEmail, findByUsername, findById, update, updatePassword, getAuthor };
+module.exports = { create, findByEmail, findByUsername, findByLogin, findById, update, updatePassword, getAuthor };

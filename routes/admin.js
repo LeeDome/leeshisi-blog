@@ -6,6 +6,7 @@ const aiController = require('../controllers/aiController');
 
 router.get('/admin/login', redirectIfAuthenticated, adminController.loginPage);
 router.post('/admin/login', adminController.login);
+router.get('/admin/login/captcha', adminController.captchaImage);
 router.get('/admin/logout', adminController.logout);
 router.get('/admin/seed', adminController.seedAdmin);
 

@@ -11,6 +11,7 @@ const uploadRoutes = require('./routes/upload');
 const databaseRoutes = require('./routes/database');
 const aiScheduler = require('./services/aiScheduler');
 const commentRateLimiter = require('./services/commentRateLimiter');
+const loginGuard = require('./services/loginGuard');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -169,6 +170,7 @@ async function startServer() {
     // 启动后台任务：AI 评论批量审核/回复调度 + 限流内存清理
     aiScheduler.start();
     commentRateLimiter.startCleanup();
+    loginGuard.startCleanup();
   } catch (err) {
     console.error('启动失败:', err);
     process.exit(1);
