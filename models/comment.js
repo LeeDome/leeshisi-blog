@@ -289,7 +289,7 @@ async function findPendingModeration(limit = 50, maxCount) {
     `SELECT c.*, a.title as article_title
      FROM comments c
      LEFT JOIN articles a ON c.article_id = a.id
-     WHERE c.ai_moderated = 0 AND c.status != 'disabled'
+     WHERE c.ai_moderated = 0 AND c.status != 'disabled' AND c.is_author != 1
      ORDER BY c.created_at ASC
      LIMIT ?`,
     [cap]
